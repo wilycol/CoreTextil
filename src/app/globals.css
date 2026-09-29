@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ------------------------------------------------------------
+   Impresión (ficha técnica y etiquetas QR)
+   ------------------------------------------------------------ */
+@media print {
+  /* Oculta chrome de la app: header, botones y elementos marcados */
+  header,
+  nav,
+  .print\:hidden,
+  button {
+    display: none !important;
+  }
+
+  /* La ficha se imprime sobre blanco, con tinta negra */
+  body,
+  .tech-sheet {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .tech-sheet *,
+  .tech-sheet td,
+  .tech-sheet th,
+  .tech-sheet h1,
+  .tech-sheet h2,
+  .tech-sheet h3,
+  .tech-sheet p,
+  .tech-sheet span,
+  .tech-sheet li {
+    color: #111111 !important;
+    border-color: #d4d4d4 !important;
+    background: transparent !important;
+  }
+
+  .tech-sheet table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .tech-sheet th,
+  .tech-sheet td {
+    border: 1px solid #d4d4d4 !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Evita cortes feos entre secciones */
+  .tech-sheet section {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
