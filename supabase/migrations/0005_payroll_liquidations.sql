@@ -43,8 +43,8 @@ create table if not exists public.order_liquidations (
 alter table public.order_liquidations enable row level security;
 
 create policy "liquidations_tenant_all" on public.order_liquidations
-    for all using (tenant_id = public.current_profile().tenant_id)
-    with check (tenant_id = public.current_profile().tenant_id);
+    for all using (tenant_id = (public.current_profile()).tenant_id)
+    with check (tenant_id = (public.current_profile()).tenant_id);
 
 create policy "liquidations_satellite_read" on public.order_liquidations
     for select using (satellite_user_id = auth.uid());

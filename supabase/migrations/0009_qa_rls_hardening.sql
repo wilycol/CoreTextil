@@ -56,7 +56,7 @@ create trigger guard_profile_role_change_trg
 drop policy if exists "tickets_read_involved" on public.material_tickets;
 create policy "tickets_read_involved" on public.material_tickets
     for select using (
-        tenant_id = public.current_profile().tenant_id
+        tenant_id = (public.current_profile()).tenant_id
         or operator_id = auth.uid()
         or satellite_approver_id = auth.uid()
         or exists (

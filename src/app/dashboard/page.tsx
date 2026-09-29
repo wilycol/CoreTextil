@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import InviteButton from "./InviteButton";
 
 type Card = {
   href: string;
@@ -103,12 +104,17 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Hola, {profile.full_name}</h1>
-      <p className="mt-1 text-slate-400">
-        {profile.role === "operator"
-          ? "Tu taller y tus ganancias, siempre a la mano."
-          : "El estado de tu producción textil en un solo lugar."}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Hola, {profile.full_name}</h1>
+          <p className="mt-1 text-slate-400">
+            {profile.role === "operator"
+              ? "Tu taller y tus ganancias, siempre a la mano."
+              : "El estado de tu producción textil en un solo lugar."}
+          </p>
+        </div>
+        {profile.role !== "operator" && <InviteButton role={profile.role} />}
+      </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (

@@ -26,14 +26,14 @@ create policy "materials_tenant" on public.garment_materials
         exists (
             select 1 from public.garments g
             where g.id = garment_materials.garment_id
-              and g.tenant_id = public.current_profile().tenant_id
+              and g.tenant_id = (public.current_profile()).tenant_id
         )
     )
     with check (
         exists (
             select 1 from public.garments g
             where g.id = garment_materials.garment_id
-              and g.tenant_id = public.current_profile().tenant_id
+              and g.tenant_id = (public.current_profile()).tenant_id
         )
     );
 

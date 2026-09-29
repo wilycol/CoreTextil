@@ -10,7 +10,7 @@
 drop policy if exists "logs_read_tenant" on public.daily_production_logs;
 create policy "logs_read_tenant" on public.daily_production_logs
     for select using (
-        tenant_id = public.current_profile().tenant_id
+        tenant_id = (public.current_profile()).tenant_id
         or operator_id = auth.uid()
         or exists (
             select 1 from public.profiles op

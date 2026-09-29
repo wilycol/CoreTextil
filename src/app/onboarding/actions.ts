@@ -53,27 +53,14 @@ export async function completeOnboarding(
     return { ok: true };
   }
 
-  // Operario: se vincula al satélite de su jefe por email
-  if (!satelliteOwnerEmail) {
-    return { ok: false, error: "Escribe el email del jefe de tu taller." };
+  if (role === "operator") {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role: "operator", satellite_owner_id: null })
+      .eq("id", user.id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   }
 
-  const { data: owner, error: ownerError } = await supabase
-    .rpc("find_satellite_by_email", { target_email: satelliteOwnerEmail })
-    .maybeSingle();
-
-  if (ownerError || !owner) {
-    return {
-      ok: false,
-      error:
-        "No encontramos un taller satélite con ese email. Pide a tu jefe que entre a CoreTextil primero.",
-    };
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: "operator", satellite_owner_id: (owner as any).id })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  return { ok: false, error: "Rol no válido" };
 }
