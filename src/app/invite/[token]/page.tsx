@@ -3,9 +3,12 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import AcceptInviteButton from "./AcceptInviteButton";
 
-export default async function InvitePage({ params }: { params: { token: string } }) {
+export default async function InvitePage({ params }: { params: Promise<{ token: string }> | { token: string } }) {
   const supabase = await createClient();
-  const token = params.token;
+  
+  // Await de params para soportar Next.js 15+
+  const resolvedParams = await params;
+  const token = resolvedParams.token;
 
   // 1. Validar la invitación públicamente
   const { data: invite, error } = await supabase
