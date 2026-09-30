@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import InviteButton from "./InviteButton";
 
 type Card = {
@@ -90,14 +91,40 @@ const OPERATOR_CARDS: Card[] = [
 
 export default async function DashboardPage() {
   const { profile } = await getSession();
+  const supabase = await createClient();
 
   let cards: Card[];
+  let linkInfo = "";
+
   if (profile.role === "brand_admin" || profile.role === "designer" || profile.role === "cutter") {
     cards = BRAND_CARDS;
+    const { data: tenant } = await supabase.from("tenants").select("name").eq("id", profile.tenant_id).single();
+    if (tenant) linkInfo = `🏢 Marca: ${tenant.name} | ID: ${profile.tenant_id}`;
   } else if (profile.role === "satellite_owner") {
     cards = SATELLITE_CARDS;
+    const { data: links } = await supabase
+      .from("satellite_links")
+      .select("tenants(name)")
+      .eq("satellite_user_id", profile.id);
+    
+    if (links && links.length > 0) {
+      const names = links.map((l: any) => l.tenants?.name).join(", ");
+      linkInfo = `🤝 Vinculado a Marcas: ${names}`;
+    } else {
+      linkInfo = "⚠️ Taller Satélite Independiente (Sin marca vinculada aún)";
+    }
   } else if (profile.role === "operator") {
     cards = OPERATOR_CARDS;
+    if (profile.satellite_owner_id) {
+      const { data: boss } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", profile.satellite_owner_id)
+        .single();
+      linkInfo = `🏭 Trabajando para el taller satélite de: ${boss?.full_name || "Desconocido"}`;
+    } else {
+      linkInfo = "💼 Operario Libre (Buscando taller)";
+    }
   } else {
     redirect("/onboarding");
   }
@@ -112,6 +139,11 @@ export default async function DashboardPage() {
               ? "Tu taller y tus ganancias, siempre a la mano."
               : "El estado de tu producción textil en un solo lugar."}
           </p>
+          {linkInfo && (
+            <p className="mt-2 text-sm font-medium text-cyan-400 bg-cyan-900/20 inline-block px-3 py-1 rounded-md border border-cyan-800/50">
+              {linkInfo}
+            </p>
+          )}
         </div>
         {profile.role !== "operator" && <InviteButton role={profile.role} />}
       </div>
