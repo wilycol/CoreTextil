@@ -2,13 +2,19 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GoogleButton from "./GoogleButton";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { next?: string };
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect("/dashboard");
+  const nextUrl = searchParams.next || "/dashboard";
+
+  if (user) redirect(nextUrl);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
@@ -23,7 +29,7 @@ export default async function LoginPage() {
           Marcas, talleres satélite y operarios usan la misma puerta: tu cuenta
           de Google. Así cada pieza marcada queda trazada a una persona real.
         </p>
-        <GoogleButton />
+        <GoogleButton nextUrl={nextUrl} />
         <p className="mt-6 text-center text-xs text-slate-500">
           Piloto de 60 días sin costo para marcas de Cúcuta y Norte de Santander.
         </p>

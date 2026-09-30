@@ -2,13 +2,13 @@
 
 import { createClient } from "@/lib/supabase/client";
 
-export default function GoogleButton() {
+export default function GoogleButton({ nextUrl = "/dashboard" }: { nextUrl?: string }) {
   async function signInWithGoogle() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
       },
     });
     if (error) alert("No se pudo iniciar sesión: " + error.message);
