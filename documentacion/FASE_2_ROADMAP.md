@@ -27,3 +27,8 @@ Aprovechar el historial de producción (marcaciones de destajo) para generar ins
 
 ---
 *Documento vivo. Se irá actualizando a medida que se completen hitos de la Fase 1 (MVP).*
+## 5. Ficha de Registro de Marcas (Onboarding B2B)
+Al registrar una marca, se desplegará un formulario para completar la identidad corporativa antes de acceder al Dashboard:
+- **Nombre de la Empresa / Marca**
+- **NIT / RUT / Documento Tributario**
+- **Teléfono y Datos del Administrador**

@@ -26,19 +26,21 @@ export async function completeOnboarding(
   }
 
   if (role === "brand_admin") {
-    const { data: tenant, error: tenantError } = await supabase
+    // Generamos el ID aquí para evitar el error de RLS al hacer .select()
+    const tenantId = crypto.randomUUID();
+    
+    const { error: tenantError } = await supabase
       .from("tenants")
-      .insert({ name: "Mi marca" })
-      .select("id")
-      .single();
+      .insert({ id: tenantId, name: "Mi marca" });
 
-    if (tenantError || !tenant) {
-      return { ok: false, error: "No se pudo crear la organización." };
+    if (tenantError) {
+      console.error(tenantError);
+      return { ok: false, error: "No se pudo crear la organización: " + tenantError.message };
     }
 
     const { error } = await supabase
       .from("profiles")
-      .update({ role: "brand_admin", tenant_id: tenant.id })
+      .update({ role: "brand_admin", tenant_id: tenantId })
       .eq("id", user.id);
     if (error) return { ok: false, error: error.message };
     return { ok: true };
