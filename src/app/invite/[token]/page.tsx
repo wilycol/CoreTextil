@@ -21,6 +21,10 @@ export default async function InvitePage({ params }: { params: { token: string }
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-red-400">Enlace Inválido</h1>
           <p className="mt-2 text-slate-400">Esta invitación no existe, ha expirado, o ya fue utilizada.</p>
+          <p className="mt-4 text-xs text-slate-500 break-words">
+            Detalle técnico: {error?.message || "No se encontró el token en la BD"} <br/>
+            Token buscado: {token}
+          </p>
         </div>
       </main>
     );
