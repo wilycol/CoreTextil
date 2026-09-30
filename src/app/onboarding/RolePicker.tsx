@@ -27,7 +27,11 @@ export default function RolePicker() {
     setError(null);
     startTransition(async () => {
       const res = await completeOnboarding(role, role === "operator" ? bossEmail : undefined);
-      if (!res.ok) setError(res.error ?? "Error inesperado");
+      if (!res.ok) {
+        setError(res.error ?? "Error inesperado");
+      } else {
+        window.location.href = "/dashboard";
+      }
     });
   }
 
