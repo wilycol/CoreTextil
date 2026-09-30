@@ -10,11 +10,12 @@ export default async function InvitePage({ params }: { params: { token: string }
   // 1. Validar la invitación públicamente
   const { data: invite, error } = await supabase
     .from("invitations")
-    .select("*, inviter:profiles!inviter_id(full_name, role)")
+    .select("*")
     .eq("token", token)
     .single();
 
   if (error || !invite) {
+    console.error("Error al buscar invitación:", error);
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
         <div className="max-w-md text-center">
