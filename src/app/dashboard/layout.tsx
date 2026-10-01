@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import SignOutButton from "./SignOutButton";
+import GlobalBackButton from "./GlobalBackButton";
 
 const ROLE_LABEL: Record<string, string> = {
   brand_admin: "Marca",
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
       <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
           <div className="flex items-center gap-4">
+            <GlobalBackButton />
             <Link href="/dashboard" className="text-lg font-bold">
               Core<span className="text-cyan-400">Textil</span>
             </Link>
