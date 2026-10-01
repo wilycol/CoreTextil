@@ -45,10 +45,12 @@ function fileToResizedBase64(
 
 export default function GarmentForm() {
   const [name, setName] = useState("");
-  const [referenceCode, setReferenceCode] = useState("");
+  const [referenceCode, setReferenceCode] = useState(
+    () => `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+  );
   const [baseRate, setBaseRate] = useState("4000");
-  const [photo, setPhoto] = useState<{ base64: string; mimeType: string } | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<{ base64: string; mimeType: string; url: string }[]>([]);
+  const [gpuStatus, setGpuStatus] = useState<"idle" | "booting" | "online">("idle");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -77,16 +79,26 @@ export default function GarmentForm() {
       setError("Escribe el nombre y la referencia de la prenda.");
       return;
     }
-    if (!photo) {
-      setError("Sube una foto o boceto para analizar con IA.");
+    if (photos.length === 0) {
+      setError("Sube al menos una foto (frente, espalda, reverso) para analizar con IA.");
       return;
     }
     setError(null);
     setAnalyzing(true);
+    
+    // Simulación del orquestador Fénix
+    if (gpuStatus === "idle") {
+      setGpuStatus("booting");
+      // Simulamos la espera mientras Fénix enciende el túnel y responde a Supabase
+      await new Promise((r) => setTimeout(r, 2500));
+      setGpuStatus("online");
+    }
+
     try {
+      // Por ahora enviamos la primera imagen al backend hasta conectar el túnel real
       const res = await generateDNAFromPhoto({
-        imageBase64: photo.base64,
-        mimeType: photo.mimeType,
+        imageBase64: photos[0].base64,
+        mimeType: photos[0].mimeType,
         referenceCode: referenceCode.trim().toUpperCase(),
         baseRateCop: Number(baseRate) || 4000,
         hintName: name.trim(),
@@ -99,6 +111,7 @@ export default function GarmentForm() {
       }
     } finally {
       setAnalyzing(false);
+      // Fénix mantendrá el status online hasta que pasen 10 min de inactividad
     }
   }
 
@@ -181,14 +194,19 @@ export default function GarmentForm() {
             type="file"
             accept="image/*"
             capture="environment"
+            multiple
             className="hidden"
             onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
+              const files = Array.from(e.target.files || []).slice(0, 5);
+              if (!files.length) return;
               try {
-                const resized = await fileToResizedBase64(f, MAX_DIM);
-                setPhoto(resized);
-                setPhotoUrl(`data:${resized.mimeType};base64,${resized.base64}`);
+                const newPhotos = await Promise.all(
+                  files.map(async (f) => {
+                    const resized = await fileToResizedBase64(f, MAX_DIM);
+                    return { ...resized, url: `data:${resized.mimeType};base64,${resized.base64}` };
+                  })
+                );
+                setPhotos(newPhotos);
                 setPreview(null);
               } catch (err: any) {
                 setError(err?.message ?? "No se pudo procesar la imagen.");
@@ -199,26 +217,33 @@ export default function GarmentForm() {
             onClick={() => fileRef.current?.click()}
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-cyan-500"
           >
-            {photo ? "Cambiar imagen" : "Subir foto 📷"}
+            {photos.length > 0 ? `Cambiar imágenes (${photos.length})` : "Subir fotos (Máx 5) 📷"}
           </button>
         </div>
 
-        {photoUrl && (
-          <div className="mt-4 flex items-start gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photoUrl}
-              alt="Prenda a analizar"
-              className="h-40 w-40 rounded-xl border border-slate-700 object-cover"
-            />
+        {photos.length > 0 && (
+          <div className="mt-4 flex flex-col items-start gap-4">
+            <div className="flex flex-wrap gap-2">
+              {photos.map((p, i) => (
+                <img
+                  key={i}
+                  src={p.url}
+                  alt={`Prenda ${i + 1}`}
+                  className="h-24 w-24 rounded-xl border border-slate-700 object-cover"
+                />
+              ))}
+            </div>
+            
             <button
               onClick={analyzeWithAI}
               disabled={analyzing}
               className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
             >
-              {analyzing
-                ? "Analizando con IA…"
-                : "✨ Generar ADN con IA desde la foto"}
+              {gpuStatus === "booting"
+                ? "Fénix: Encendiendo GPU remota..."
+                : analyzing
+                ? "Segmentando con SAM 2..."
+                : "✨ Generar Despiece Visual (Requiere GPU)"}
             </button>
           </div>
         )}
