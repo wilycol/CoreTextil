@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { formatCop } from "@/lib/cop";
-import { savePayroll } from "./actions";
+import { savePayroll, removeOperator } from "./actions";
 
 export type NominaData = {
   team: { id: string; full_name: string }[];
@@ -50,6 +50,8 @@ export default function NominaClient({ data }: { data: NominaData }) {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [operatorToRemove, setOperatorToRemove] = useState<{id: string, name: string} | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // FIX QA: agregado por rango elegido (antes se mostraba siempre la semana)
   const agg = useMemo(() => {
@@ -91,6 +93,24 @@ export default function NominaClient({ data }: { data: NominaData }) {
       if (res.ok) setSaved(`Liquidación guardada del ${startDate} al ${endDate}.`);
       else setError(res.error ?? "No se pudo guardar.");
     });
+  }
+
+  async function handleRemoveOperator() {
+    if (!operatorToRemove) return;
+    setIsRemoving(true);
+    setError(null);
+    setSaved(null);
+    const res = await removeOperator(operatorToRemove.id);
+    setIsRemoving(false);
+    if (res.ok) {
+      setOperatorToRemove(null);
+      setSaved(`Operario ${operatorToRemove.name} desvinculado exitosamente.`);
+      // Refrescar página para recargar datos reales (Server Components)
+      window.location.reload();
+    } else {
+      setError(res.error ?? "No se pudo desvincular al operario.");
+      setOperatorToRemove(null);
+    }
   }
 
   return (
@@ -149,6 +169,7 @@ export default function NominaClient({ data }: { data: NominaData }) {
               <th className="px-4 py-3">Operario</th>
               <th className="text-right">Piezas</th>
               <th className="text-right">Destajo ganado</th>
+              <th className="text-right pr-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -159,12 +180,21 @@ export default function NominaClient({ data }: { data: NominaData }) {
                 <td className="text-right font-semibold text-emerald-300">
                   {formatCop(r.earned)}
                 </td>
+                <td className="text-right pr-4 py-3">
+                  <button 
+                    onClick={() => setOperatorToRemove({ id: r.id, name: r.full_name })}
+                    className="text-xs text-red-400 hover:text-red-300 transition hover:underline"
+                  >
+                    Desvincular
+                  </button>
+                </td>
               </tr>
             ))}
             <tr className="border-t border-slate-700 bg-slate-900/70 font-bold">
               <td className="px-4 py-3">Total ({active} activos)</td>
               <td className="text-right">{totalUnits}</td>
               <td className="text-right text-emerald-300">{formatCop(totalEarned)}</td>
+              <td></td>
             </tr>
           </tbody>
         </table>
@@ -188,6 +218,37 @@ export default function NominaClient({ data }: { data: NominaData }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Confirmación Modal para Desvincular */}
+      {operatorToRemove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-100">¿Desvincular operario?</h3>
+            <p className="mt-3 text-slate-400">
+              Estás a punto de desvincular a <span className="font-semibold text-slate-200">{operatorToRemove.name}</span> de tu taller.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              El operario mantendrá su cuenta, pero ya no podrá marcar destajo bajo el nombre de tu taller. Podrás volver a invitarlo después.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setOperatorToRemove(null)}
+                disabled={isRemoving}
+                className="rounded-lg px-4 py-2 font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRemoveOperator}
+                disabled={isRemoving}
+                className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+              >
+                {isRemoving ? "Desvinculando..." : "Sí, desvincular"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

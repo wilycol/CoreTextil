@@ -18,6 +18,7 @@ export async function logUnitsCore(
     bundleCode?: string;
     operationId: string;
     units: number;
+    operatorId?: string;
   },
   user: { id: string; role: string; satellite_owner_id: string | null }
 ): Promise<LogUnitsResult> {
@@ -83,6 +84,10 @@ export async function logUnitsCore(
 
   const earned = Math.round(Number((op as any).base_rate_cop) * safeUnits);
 
+  const finalOperatorId = (user.role === "satellite_owner" && input.operatorId)
+    ? input.operatorId
+    : user.id;
+
   const { error: insertError } = await supabase
     .from("daily_production_logs")
     .insert({
@@ -90,7 +95,7 @@ export async function logUnitsCore(
       order_id: (bundle as any).order_id,
       bundle_id: (bundle as any).id,
       operation_id: input.operationId,
-      operator_id: user.id,
+      operator_id: finalOperatorId,
       units_completed: safeUnits,
       earned_amount: earned,
     });

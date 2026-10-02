@@ -74,6 +74,17 @@ export default async function OperatorLogPage({
     0
   );
 
+  // Fetch team if the user is a satellite owner
+  let operators: { id: string; full_name: string }[] = [];
+  if (profile.role === "satellite_owner") {
+    const { data: team } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("satellite_owner_id", profile.id)
+      .eq("role", "operator");
+    operators = (team ?? []) as any[];
+  }
+
   const data: MarkingData = {
     role: profile.role,
     walletToday,
@@ -99,6 +110,7 @@ export default async function OperatorLogPage({
       rate: Number(o.base_rate_cop),
     })),
     done,
+    operators,
   };
 
   return <LogClient data={data} preselectedCode={bundleParam ?? null} />;

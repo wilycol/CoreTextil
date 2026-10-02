@@ -10,13 +10,14 @@ type Result =
 export async function logProduction(
   bundleId: string,
   operationId: string,
-  units: number
+  units: number,
+  operatorId?: string
 ): Promise<Result> {
   const profile = await requireProfile();
   if (!profile) return { ok: false, error: "Sesión expirada." };
 
   const res = await logUnitsCore(
-    { bundleId, operationId, units },
+    { bundleId, operationId, units, operatorId },
     {
       id: profile.id,
       role: profile.role,

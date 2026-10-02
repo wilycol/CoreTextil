@@ -25,6 +25,7 @@ export type MarkingData = {
     rate: number;
   }[];
   done: Record<string, number>; // "bundleId:opId" -> unidades del equipo
+  operators?: { id: string; full_name: string }[];
 };
 
 const MACHINE_LABEL: Record<string, string> = {
@@ -47,6 +48,7 @@ export default function LogClient({
   const [orderId, setOrderId] = useState(preselect?.orderId ?? data.orders[0]?.id ?? "");
   const [bundleId, setBundleId] = useState<string | null>(preselect?.id ?? null);
   const [opId, setOpId] = useState<string | null>(null);
+  const [operatorId, setOperatorId] = useState<string>("");
   const [custom, setCustom] = useState("1");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export default function LogClient({
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const res = await logProduction(bundle.id, op.id, units);
+      const res = await logProduction(bundle.id, op.id, units, operatorId || undefined);
       if (res.ok) {
         const key = `${bundle.id}:${op.id}`;
         setDone((d) => ({ ...d, [key]: (d[key] ?? 0) + units }));
@@ -137,6 +139,25 @@ export default function LogClient({
           ))}
         </select>
       </label>
+
+      {/* Selector de operario (solo para jefes de taller) */}
+      {data.role === "satellite_owner" && data.operators && data.operators.length > 0 && (
+        <label className="block text-sm">
+          <span className="mb-1 block text-slate-400">Operario que realizó el trabajo (opcional)</span>
+          <select
+            value={operatorId}
+            onChange={(e) => setOperatorId(e.target.value)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-base text-slate-100 outline-none focus:border-cyan-500"
+          >
+            <option value="">A mi nombre (Jefe de taller)</option>
+            {data.operators.map((op) => (
+              <option key={op.id} value={op.id}>
+                {op.full_name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {/* Paso 2: atado */}
       <div>

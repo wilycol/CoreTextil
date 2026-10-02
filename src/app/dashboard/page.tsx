@@ -41,6 +41,11 @@ const BRAND_CARDS: Card[] = [
     title: "Liquidar por corte",
     text: "Paga a tus satélites por prendas entregadas: entregadas vs por ensamblar, a un clic.",
   },
+  {
+    href: "/dashboard/red",
+    title: "Mi red de talleres",
+    text: "Visualiza, invita y administra los talleres satélite vinculados a tu marca.",
+  },
 ];
 
 const SATELLITE_CARDS: Card[] = [

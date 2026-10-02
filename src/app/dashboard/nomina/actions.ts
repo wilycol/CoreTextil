@@ -106,3 +106,20 @@ export async function savePayroll(
   if (upsertError) return { ok: false, error: upsertError.message };
   return { ok: true };
 }
+
+export async function removeOperator(operatorId: string): Promise<Result> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ satellite_owner_id: null })
+    .eq("id", operatorId)
+    .eq("satellite_owner_id", user.id);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}

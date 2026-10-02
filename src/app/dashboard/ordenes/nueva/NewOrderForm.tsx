@@ -11,9 +11,11 @@ type MatrixRow = { size: string; color: string; units: number };
 export default function NewOrderForm({
   garments,
   preselectedGarment,
+  satellites,
 }: {
   garments: GarmentsRow[];
   preselectedGarment: string | null;
+  satellites: { id: string; email: string; full_name: string }[];
 }) {
   const router = useRouter();
   const [garmentId, setGarmentId] = useState(preselectedGarment ?? garments[0]?.id ?? "");
@@ -92,15 +94,20 @@ export default function NewOrderForm({
         </label>
         <label className="text-sm">
           <span className="mb-1 block text-slate-400">
-            Email del satélite (opcional, se vincula al enviar)
+            Taller satélite asignado (opcional)
           </span>
-          <input
+          <select
             value={satelliteEmail}
             onChange={(e) => setSatelliteEmail(e.target.value)}
-            type="email"
-            placeholder="taller@ejemplo.com"
             className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-cyan-500"
-          />
+          >
+            <option value="">-- Sin asignar --</option>
+            {satellites.map((s) => (
+              <option key={s.id} value={s.email}>
+                {s.full_name} ({s.email})
+              </option>
+            ))}
+          </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block text-slate-400">

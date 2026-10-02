@@ -25,6 +25,12 @@ export default async function NewOrderPage({
     .select("*")
     .order("created_at", { ascending: false });
 
+  const { data: satellites } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .eq("role", "satellite_owner")
+    .eq("tenant_id", profile.tenant_id);
+
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-bold">Nueva orden de corte</h1>
@@ -36,6 +42,7 @@ export default async function NewOrderPage({
         <NewOrderForm
           garments={(garments ?? []) as GarmentsRow[]}
           preselectedGarment={garmentParam ?? null}
+          satellites={satellites ?? []}
         />
       </div>
     </div>
