@@ -664,6 +664,9 @@ async def extract_garment(
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
 
 if __name__ == "__main__":
+    # Inicializar modelo fotorrealista en GPU si está disponible
+    init_hf_diffusers("stabilityai/sdxl-turbo")
+
     nest_asyncio.apply()
 
     import threading
