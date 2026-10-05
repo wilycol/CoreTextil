@@ -46,6 +46,11 @@ const BRAND_CARDS: Card[] = [
     title: "Mi red de talleres",
     text: "Visualiza, invita y administra los talleres satélite vinculados a tu marca.",
   },
+  {
+    href: "/dashboard/marca",
+    title: "Configuración de Marca",
+    text: "Administra tu identidad corporativa, nombre comercial, NIT y datos de contacto.",
+  },
 ];
 
 const SATELLITE_CARDS: Card[] = [
@@ -58,6 +63,11 @@ const SATELLITE_CARDS: Card[] = [
     href: "/dashboard/satelite",
     title: "Mi taller",
     text: "Registra tus costos fijos, calcula tu CFI y simula la rentabilidad de un corte antes de aceptarlo.",
+  },
+  {
+    href: "/dashboard/talento",
+    title: "Bolsa de Operarios",
+    text: "Busca costureros libres por especialidad o máquina y contáctalos para tu taller.",
   },
   {
     href: "/dashboard/operario",
@@ -86,6 +96,11 @@ const OPERATOR_CARDS: Card[] = [
     href: "/dashboard/operario",
     title: "Marcar producción",
     text: "Registra tus piezas con botones rápidos y mira tus ganancias acumuladas.",
+  },
+  {
+    href: "/dashboard/operario/perfil",
+    title: "Mi Perfil Técnico",
+    text: "Configura tus especialidades, años de experiencia y máquinas que dominas.",
   },
   {
     href: "/dashboard/tickets",

@@ -6,6 +6,8 @@ import type { OrderBundlesRow, ProductionOrdersRow } from "@/lib/db.types";
 import { formatCop } from "@/lib/cop";
 import PrintButton from "./PrintButton";
 import LiquidationPanel from "./LiquidationPanel";
+import OrderNegotiationClient from "./OrderNegotiationClient";
+import DeleteOrderButton from "./DeleteOrderButton";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Borrador",
@@ -111,7 +113,24 @@ export default async function OrderDetailPage({
             {STATUS_LABEL[o.status] ?? o.status}
           </p>
         </div>
-        <PrintButton />
+        <div className="flex items-center gap-3">
+          {isBrandOwner && (
+            <DeleteOrderButton
+              orderId={o.id}
+              status={o.status}
+              assignmentStatus={o.assignment_status}
+            />
+          )}
+          <PrintButton />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <OrderNegotiationClient
+          orderId={o.id}
+          currentStatus={o.assignment_status}
+          isSatellite={profile.role === "satellite_owner"}
+        />
       </div>
 
       {isBrandOwner && (

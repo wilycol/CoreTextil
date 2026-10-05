@@ -8,15 +8,47 @@ import { createOrderCore, requireProfile } from "@/lib/services/orders";
 
 type Result = { ok: true } | { ok: false; error: string };
 
-// ---------- ADN desde foto (IA multimodal) ----------
-export async function generateDNAFromPhoto(input: {
-  imageBase64: string;
-  mimeType: string;
+// ---------- Llamada a Motor de Visión (Colab Worker) ----------
+export async function runColabVision(input: {
+  name: string;
   referenceCode: string;
-  baseRateCop: number;
-  hintName?: string;
-}): Promise<{ ok: true; dna: any } | { ok: false; error: string }> {
-  return runExplodeGarment(input);
+}): Promise<{ ok: true; garmentId: string } | { ok: false; error: string }> {
+  const profile = await requireProfile();
+  if (!profile?.tenant_id) return { ok: false, error: "No tienes una marca configurada." };
+
+  const supabase = await createClient();
+  const { data: worker } = await supabase.from("ai_vision_worker").select("cloudflare_url, status").eq("id", 1).single();
+
+  if (!worker || worker.status !== "online" || !worker.cloudflare_url) {
+    return { ok: false, error: "El motor de visión (Colab) está apagado. Enciéndelo primero." };
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("referenceCode", input.referenceCode);
+    formData.append("name", input.name);
+    formData.append("tenantId", profile.tenant_id);
+    
+    // Aquí irían los archivos reales en producción, por ahora el worker no los requiere obligatoriamente.
+
+    const res = await fetch(`${worker.cloudflare_url}/api/v1/extract`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      return { ok: false, error: `Error del servidor de visión: ${res.statusText}` };
+    }
+
+    const data = await res.json();
+    if (!data.ok) {
+      return { ok: false, error: data.message || "Error interno en Visión" };
+    }
+
+    return { ok: true, garmentId: data.garment_id };
+  } catch (err: any) {
+    return { ok: false, error: err.message };
+  }
 }
 
 // ---------- Guardar prenda (heurístico o desde IA) ----------

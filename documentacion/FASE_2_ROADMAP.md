@@ -25,10 +25,17 @@ Aprovechar el historial de producción (marcaciones de destajo) para generar ins
 - **Asignación Inteligente:** La IA recomendará qué operario debe hacer qué operación (ej. pegar cuellos, cerrar costados) basándose en su rendimiento estadístico histórico en cortes anteriores.
 - **Productividad:** Ayudar a los dueños de talleres a maximizar su eficiencia, equilibrando líneas de ensamble con sugerencias matemáticas.
 
----
-*Documento vivo. Se irá actualizando a medida que se completen hitos de la Fase 1 (MVP).*
 ## 5. Ficha de Registro de Marcas (Onboarding B2B)
 Al registrar una marca, se desplegará un formulario para completar la identidad corporativa antes de acceder al Dashboard:
 - **Nombre de la Empresa / Marca**
 - **NIT / RUT / Documento Tributario**
 - **Teléfono y Datos del Administrador**
+
+## 6. Motor de Visión IA (Procesamiento de Imágenes)
+El proceso de "ADN de Prenda" será asistido visualmente por Inteligencia Artificial, almacenando múltiples imágenes en el bucket `garments`:
+- **Input (Imágenes de Referencia):** La marca sube **3 a 5 fotos** de la prenda armada desde distintos ángulos.
+- **Output de IA (Despiece):** El motor devuelve **1 imagen por pieza** (ej. 5 fotos para 5 piezas) con sus dimensiones esperadas según la talla.
+- **Transparencia en la Red:** Todas las imágenes (referencia + piezas individuales) conformarán el mapa de ensamblaje en las Órdenes de Corte, siendo la guía visual principal para los talleres y operarios de la red.
+
+---
+*Documento vivo. Se irá actualizando a medida que se completen hitos de la Fase 1 y 2.*

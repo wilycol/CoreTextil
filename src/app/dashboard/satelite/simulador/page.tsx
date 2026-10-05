@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import SimClient from "./SimClient";
 
 export type OpLite = {
+  id: string;
   operation_name: string;
   machine_type: string;
   base_rate_cop: number;
@@ -40,7 +41,7 @@ export default async function SimulatorPage() {
   for (const gid of garmentIds) {
     const { data: ops } = await supabase
       .from("garment_operations")
-      .select("operation_name, machine_type, base_rate_cop")
+      .select("id, operation_name, machine_type, base_rate_cop")
       .eq("garment_id", gid)
       .order("step_order");
     opsByGarment[gid] = (ops ?? []) as OpLite[];

@@ -12,6 +12,12 @@ export type OrderStatus =
   | "in_progress"
   | "completed";
 
+export type OrderAssignmentStatus =
+  | "proposed"
+  | "accepted"
+  | "rejected"
+  | "negotiating";
+
 export type TicketReason = "missing_piece" | "damaged_fabric" | "shortage_supplies";
 
 export type TicketStatus =
@@ -26,6 +32,8 @@ export type TenantsRow = {
   id: string;
   name: string;
   nit_rut: string | null;
+  admin_phone: string | null;
+  admin_address: string | null;
   created_at: string;
 };
 
@@ -43,11 +51,24 @@ export type ProfilesRow = {
 export type SatelliteCostProfilesRow = {
   id: string;
   satellite_user_id: string;
+  commercial_name: string | null;
+  max_operators: number;
+  available_machines: string[];
   rent_monthly: number;
   energy_monthly: number;
   consumables_monthly: number;
   maintenance_monthly: number;
   estimated_monthly_units: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OperatorProfilesRow = {
+  id: string;
+  phone_whatsapp: string | null;
+  years_of_experience: number;
+  specialties: string[];
+  machines: string[];
   created_at: string;
   updated_at: string;
 };
@@ -84,7 +105,33 @@ export type GarmentOperationsRow = {
   machine_type: string;
   base_rate_cop: number;
   sam_minutes: number | null;
+  prerequisite_operation_id: string | null;
   created_at: string;
+};
+
+export type NotificationsRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  type: string;
+  is_read: boolean;
+  action_url: string | null;
+  created_at: string;
+};
+
+export type SatelliteOperationRatesRow = {
+  id: string;
+  satellite_user_id: string;
+  operation_id: string;
+  satellite_rate_cop: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OperationPartsRow = {
+  operation_id: string;
+  part_id: string;
 };
 
 export type ProductionOrdersRow = {
@@ -96,6 +143,7 @@ export type ProductionOrdersRow = {
   unit_price_agreed: number;
   total_units: number;
   status: OrderStatus;
+  assignment_status: OrderAssignmentStatus;
   created_at: string;
 };
 

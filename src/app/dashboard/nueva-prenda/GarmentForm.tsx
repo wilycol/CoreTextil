@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { inferGarmentDNA, type GarmentDNA } from "@/lib/ai";
 import { formatCop } from "@/lib/cop";
-import { createGarment, generateDNAFromPhoto } from "./actions";
+import { createGarment, runColabVision } from "./actions";
 
 type Preview = {
   source: "local" | "gemini" | "fallback";
@@ -95,23 +95,20 @@ export default function GarmentForm() {
     }
 
     try {
-      // Por ahora enviamos la primera imagen al backend hasta conectar el túnel real
-      const res = await generateDNAFromPhoto({
-        imageBase64: photos[0].base64,
-        mimeType: photos[0].mimeType,
+      const res = await runColabVision({
         referenceCode: referenceCode.trim().toUpperCase(),
-        baseRateCop: Number(baseRate) || 4000,
-        hintName: name.trim(),
+        name: name.trim(),
       });
+      
       if (res.ok) {
-        const { source, note, ...rest } = res.dna;
-        setPreview({ source, note, dna: rest });
+        window.location.href = `/dashboard/prendas/${res.garmentId}`;
       } else {
         setError(res.error);
+        setAnalyzing(false);
       }
-    } finally {
+    } catch (err: any) {
+      setError(err.message ?? "Error conectando con el orquestador Fénix.");
       setAnalyzing(false);
-      // Fénix mantendrá el status online hasta que pasen 10 min de inactividad
     }
   }
 

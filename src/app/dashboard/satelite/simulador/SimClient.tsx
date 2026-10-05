@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { OpLite } from "./page";
 import { fixedUnitCost, profitabilityLight } from "@/lib/costing";
 import { formatCop } from "@/lib/cop";
+import { saveSatelliteRates } from "./actions";
 
 type OrderLite = {
   id: string;
@@ -29,7 +30,17 @@ export default function SimClient({
 }) {
   const [orderId, setOrderId] = useState(orders[0]?.id ?? "");
   const order = orders.find((o) => o.id === orderId) ?? null;
-  const ops = order ? (opsByGarment[order.garmentId] ?? []) : [];
+  const originalOps = order ? (opsByGarment[order.garmentId] ?? []) : [];
+
+  // State to hold custom piecemeal rates per operation ID
+  const [customRates, setCustomRates] = useState<Record<string, number>>({});
+  
+  const ops = useMemo(() => {
+    return originalOps.map((op) => ({
+      ...op,
+      base_rate_cop: customRates[op.id] ?? op.base_rate_cop,
+    }));
+  }, [originalOps, customRates]);
 
   const defaultPool = useMemo(
     () => ops.reduce((acc, o) => acc + Number(o.base_rate_cop), 0),
@@ -39,8 +50,6 @@ export default function SimClient({
   const pool = poolOverride !== null ? Number(poolOverride) || 0 : defaultPool;
 
   const sim = useMemo(() => {
-    // FIX QA: sin costos fijos registrados no hay simulación (antes CFI nulo
-    // se trataba como 0 y mostraba un margen irreal).
     if (!order || cfi === null || !Number.isFinite(cfi)) return null;
     const net = order.unitPrice - cfi - pool;
     const marginPct = order.unitPrice > 0 ? (net / order.unitPrice) * 100 : 0;
@@ -51,13 +60,40 @@ export default function SimClient({
     };
   }, [order, cfi, pool]);
 
-  const byMachine = useMemo(() => {
-    const totals: Record<string, number> = {};
-    for (const o of ops) {
-      totals[o.machine_type] = (totals[o.machine_type] ?? 0) + Number(o.base_rate_cop);
-    }
-    return totals;
-  }, [ops]);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  function handleSaveRates() {
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      const payload = Object.entries(customRates).map(([id, rate]) => ({
+        operation_id: id,
+        satellite_rate_cop: rate,
+      }));
+      
+      if (payload.length === 0) {
+        setError("No hay cambios para guardar.");
+        return;
+      }
+
+      const res = await saveSatelliteRates(payload);
+      if (res.ok) {
+        setSuccess("Tarifas personalizadas guardadas con éxito.");
+      } else {
+        setError(res.error ?? "No se pudieron guardar las tarifas.");
+      }
+    });
+  }
+
+  function handleRateChange(opId: string, value: string) {
+    const num = parseInt(value, 10);
+    setCustomRates((prev) => ({
+      ...prev,
+      [opId]: isNaN(num) ? 0 : num,
+    }));
+  }
 
   if (orders.length === 0) {
     return (
@@ -141,23 +177,43 @@ export default function SimClient({
 
           {ops.length > 0 && (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-              <h2 className="mb-3 text-sm font-semibold text-slate-300">
-                Distribución sugerida del destajo por máquina
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-slate-300">
+                  Distribución del destajo por máquina
+                </h2>
+                <button
+                  onClick={handleSaveRates}
+                  disabled={pending}
+                  className="rounded bg-cyan-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-cyan-500 disabled:opacity-50"
+                >
+                  {pending ? "Guardando..." : "Guardar mis Tarifas"}
+                </button>
+              </div>
+              
+              {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
+              {success && <p className="mb-2 text-xs text-emerald-400">{success}</p>}
+
               <table className="w-full text-sm">
                 <thead className="text-left text-slate-500">
                   <tr>
-                    <th className="py-1">Operación</th>
+                    <th className="py-2">Operación</th>
                     <th>Máquina</th>
-                    <th className="text-right">Destajo</th>
+                    <th className="text-right">Destajo (COP)</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
                   {ops.map((o, i) => (
                     <tr key={i} className="border-t border-slate-800">
-                      <td className="py-1">{o.operation_name}</td>
-                      <td>{MACHINE_LABEL[o.machine_type] ?? o.machine_type}</td>
-                      <td className="text-right">{formatCop(Number(o.base_rate_cop))}</td>
+                      <td className="py-2 pr-2">{o.operation_name}</td>
+                      <td className="pr-2">{MACHINE_LABEL[o.machine_type] ?? o.machine_type}</td>
+                      <td className="text-right py-2">
+                        <input
+                          type="number"
+                          value={o.base_rate_cop}
+                          onChange={(e) => handleRateChange(o.id, e.target.value)}
+                          className="w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-right text-slate-100 outline-none focus:border-cyan-500"
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
