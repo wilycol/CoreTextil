@@ -43,7 +43,7 @@ function fileToResizedBase64(
   });
 }
 
-// Guía de tomas fotográficas para el usuario
+// Guía fotográfica visual con placeholders prefabricados de alta resolución
 const PHOTO_GUIDE_STEPS = [
   {
     step: 1,
@@ -51,34 +51,39 @@ const PHOTO_GUIDE_STEPS = [
     desc: "Extiende la prenda plana en un mesón. Si es camisa/franela, ubica las mangas a 45°. Si es pantalón, abre las botas.",
     tip: "📏 Coloca la cinta métrica a un costado para activar la Escala Industrial 1:1.",
     icon: "👕",
+    image: "/photo_guides/guide_step_1.jpg",
   },
   {
     step: 2,
-    title: "Foto 2: Vista Trasera Completa",
-    desc: "Voltea la prenda y tómahle una foto plana desde arriba (90°) cubriendo toda la espalda.",
-    tip: "Asegúrate de que no haya arrugas sobre la mesa.",
+    title: "Foto 2: Vista Trasera / Reverso Estructural",
+    desc: "Voltea la prenda por el reverso para que la IA escanee la estructura interior completa.",
+    tip: "Mantén la prenda extendida sin arrugas ni pliegues.",
     icon: "🔄",
+    image: "/photo_guides/guide_step_2.jpg",
   },
   {
     step: 3,
-    title: "Foto 3: Detalle de Sisas y Mangas",
-    desc: "Acercamiento foto a la unión de la sisa y la manga para que la IA identifique la curva del molde.",
-    tip: "Buena iluminación evita sombras engañosas.",
+    title: "Foto 3: Detalle de Sisas y Uniones de Manga",
+    desc: "Acercamiento a la unión de la sisa y la manga para que la IA identifique la curva del molde.",
+    tip: "Buena iluminación evita sombras engañosas en la costura.",
     icon: "🔍",
+    image: "/photo_guides/guide_step_3.jpg",
   },
   {
     step: 4,
-    title: "Foto 4: Cuello / Cintura o Abrochadura",
-    desc: "Foto cercana al escote/cuello (rib, solapa o botones) opret pretina de pantalón.",
-    tip: "Identifica si requiere botones, cierres o elastano.",
+    title: "Foto 4: Cuello / Tapa Costura y Rib",
+    desc: "Foto cercana al escote/cuello mostrando la cinta tapa costura y el rib.",
+    tip: "Permite clasificar si requiere sesgar o pisar en collarín 406.",
     icon: "👔",
+    image: "/photo_guides/guide_step_4.jpg",
   },
   {
     step: 5,
-    title: "Foto 5: Reverso de Costura Interna",
-    desc: "Voltea un dobladillo o costura interna por el revés para identificar el tipo de puntada.",
-    tip: "La IA detectará automáticamente si es Fileteadora 504, Collarín 406 o Plana 301.",
+    title: "Foto 5: Reverso Macro de Costura Interna",
+    desc: "Voltea un dobladillo o costura interna por el revés para identificar la puntada exacta.",
+    tip: "La IA detectará automáticamente si es Fileteadora 504 (Overlock) o Collarín 406.",
     icon: "🪡",
+    image: "/photo_guides/guide_step_5.jpg",
   },
 ];
 
@@ -236,17 +241,17 @@ export default function GarmentForm() {
         </label>
       </div>
 
-      {/* GUÍA INTERACTIVA DE TOMA FOTOGRÁFICA */}
+      {/* GUÍA INTERACTIVA DE TOMA FOTOGRÁFICA CON PLACEHOLDERS VISUALES HD */}
       <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/90 p-5 shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">📸</span>
             <div>
               <h2 className="text-sm font-bold text-white">
-                Guía de Fotografía para Inspección IA (Recomendado)
+                Guía Visual de Fotografía para Inspección IA (Piloto Marcas & Diseñadores)
               </h2>
               <p className="text-xs text-slate-400">
-                Sigue estos consejos para que la IA extraiga los moldes 2D y la ruta de máquinas a 100% de precisión.
+                Sigue estos ejemplos de referencia para obtener 100% de precisión en el despiece de tu prenda.
               </p>
             </div>
           </div>
@@ -254,12 +259,13 @@ export default function GarmentForm() {
             onClick={() => setShowPhotoGuide(!showPhotoGuide)}
             className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
           >
-            {showPhotoGuide ? "Ocultar guía ▲" : "Ver guía de tomas ▼"}
+            {showPhotoGuide ? "Ocultar guía ▲" : "Ver guía visual ▼"}
           </button>
         </div>
 
         {showPhotoGuide && (
           <div className="mt-4">
+            {/* Pestañas de selección de paso */}
             <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
               {PHOTO_GUIDE_STEPS.map((s) => (
                 <button
@@ -277,18 +283,31 @@ export default function GarmentForm() {
               ))}
             </div>
 
-            {/* Contenido del paso activo de la guía */}
+            {/* Contenido con Placeholder Visual HD */}
             {PHOTO_GUIDE_STEPS.filter((s) => s.step === activeGuideStep).map((s) => (
-              <div key={s.step} className="mt-3 rounded-xl border border-slate-800 bg-slate-950 p-4 animate-in fade-in">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{s.icon}</span>
-                  <div>
+              <div key={s.step} className="mt-4 grid gap-5 sm:grid-cols-12 items-center rounded-xl border border-slate-800 bg-slate-950 p-4 animate-in fade-in">
+                {/* Imagen Placeholder HD */}
+                <div className="sm:col-span-5 relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900 aspect-video sm:aspect-square flex items-center justify-center group">
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <span className="absolute bottom-2 left-2 rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-cyan-300 border border-slate-800">
+                    Ejemplo Visual #{s.step}
+                  </span>
+                </div>
+
+                {/* Explicación y Tip Técnico */}
+                <div className="sm:col-span-7 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{s.icon}</span>
                     <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider">{s.title}</h3>
-                    <p className="mt-1 text-xs text-slate-300 leading-relaxed">{s.desc}</p>
-                    <p className="mt-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/30 inline-block">
-                      {s.tip}
-                    </p>
                   </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">{s.desc}</p>
+                  <p className="text-xs font-semibold text-emerald-400 bg-emerald-950/40 px-3 py-1.5 rounded-lg border border-emerald-500/30 inline-block">
+                    {s.tip}
+                  </p>
                 </div>
               </div>
             ))}
