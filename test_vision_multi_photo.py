@@ -69,11 +69,11 @@ def run_multi_photo_test():
     print(f"[OK] Tenant: '{tenant_name}' ({tenant_id})")
     
     sample_photos = generate_sample_garment_photos()
-    unique_ref = f"POLO-PARTS-{int(time.time())}"
+    unique_ref = f"FRANELA-CREW-{int(time.time())}"
     
     data_payload = {
         "referenceCode": unique_ref,
-        "name": f"Camiseta Polo Renders Piezas Aisladas {int(time.time()) % 1000}",
+        "name": f"Franela Básica Cuello Redondo Algodón {int(time.time()) % 1000}",
         "tenantId": tenant_id
     }
     
@@ -82,7 +82,7 @@ def run_multi_photo_test():
         for filename, content, mime in sample_photos
     ]
     
-    print(f"\n3. Enviando petición POST /api/v1/extract (Ref: {unique_ref}) con Imágenes Aisladas de Pieza...")
+    print(f"\n3. Enviando petición POST /api/v1/extract (Ref: {unique_ref}) para FRANELA BÁSICA CUELLO REDONDO...")
     try:
         res = requests.post(
             f"{url}/api/v1/extract",
