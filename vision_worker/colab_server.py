@@ -78,9 +78,8 @@ except ImportError:
 
 # Configuración (Credenciales CoreTextil)
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://lsypibiyuhpykykroprz.supabase.co")
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzeXBpYml5dWhweWt5a3JvcHJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc9MDcwNDg0NywiZXhwIjoyMTA2MjgwODQ3fQ.t_U--wGYs82DA0LheHl1NO71b5PvkDoMGPA9-3FAlVQ"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzeXBpYml5dWhweWt5a3JvcHJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDcwNDg0NywiZXhwIjoyMTA2MjgwODQ3fQ.t_U--wGYs82DA0LheHl1NO71b5PvkDoMGPA9-3FAlVQ"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6LsmyH_22klEU-km2qrG7eejDxN3RxNTH_SY0cbw1fSBA")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzeXBpYml5dWhweWt5a3JvcHJ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDcwNDg0NywiZXhwIjoyMTA2MjgwODQ3fQ.t_U--wGYs82DA0LheHl1NO71b5PvkDoMGPA9-3FAlVQ")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = FastAPI(title="CoreTextil Vision Engine V2 - Multi-Part & Individual Piece Renders")
