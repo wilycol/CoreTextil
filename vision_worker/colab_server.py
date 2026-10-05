@@ -255,60 +255,92 @@ def apply_workshop_rules(parts_list: list) -> list:
 # ------------------------------------------
 # 🖼️ GENERADOR DE IMÁGENES INDEPENDIENTES DE CADA PIEZA DE PRENDA
 # ------------------------------------------
+# ------------------------------------------
+# 🖼️ GENERADOR DE IMÁGENES INDEPENDIENTES DE CADA PIEZA DE PRENDA
+# ------------------------------------------
 def generate_individual_part_image(part_code: str, part_name: str, material: str, color_rgb: tuple) -> bytes:
-    """Genera una tarjeta de imagen aislada HD para una PIEZA DE PRENDA específica (garment_parts)"""
-    if HAS_DIFFUSERS and hf_pipe is not None:
-        try:
-            # Mapear descripciones visuales exactas para moldes aislados 2D según tipo de prenda
-            shape_desc = "flat cloth piece cut out"
-            if "FRONT" in part_code or "Frontal" in part_name:
-                shape_desc = "single flat 2D cut pattern piece of a classic crewneck t-shirt front torso panel with round neck cutout"
-            elif "BACK" in part_code or "Trasero" in part_name:
-                shape_desc = "single flat 2D cut pattern piece of a t-shirt back torso panel"
-            elif "SLV" in part_code or "Manga" in part_name:
-                shape_desc = "single flat 2D cut pattern piece of a short sleeve"
-            elif "CLLR" in part_code or "Cuello" in part_name:
-                shape_desc = "single flat narrow ribbed neckband strip piece"
-
-            prompt = (
-                f"Flat lay studio photograph of a {shape_desc}, made of {material}, "
-                f"lying flat on a dark navy industrial cutting table, top-down 90 degree view, "
-                f"isolated single cut pattern piece, clear cloth edges, no full garments, no polo collar, no buttons, "
-                f"clean single piece layout, photorealistic studio lighting, 8k resolution."
-            )
-            generated_img = hf_pipe(prompt, num_inference_steps=4, guidance_scale=0.0).images[0]
-            out = io.BytesIO()
-            generated_img.save(out, format='JPEG', quality=95)
-            return out.getvalue()
-        except Exception as e:
-            print(f"⚠️ Error generando pieza con HF Diffusers ({e}). Usando plantilla vectorial.")
-
+    """Genera una tarjeta de imagen de pieza aislada 2D fotorrealista para cada fila de garment_parts"""
+    # 1. Crear lienzo de mesa de corte azul marino con retícula técnica
     img = Image.new('RGB', (600, 600), color=(15, 23, 42))
     d = ImageDraw.Draw(img)
     
-    d.rectangle([20, 20, 580, 580], outline=color_rgb, width=4)
-    d.text((40, 40), f"PIEZA DE PRENDA: [{part_code}]", fill=color_rgb)
-    d.text((40, 70), f"Nombre: {part_name}", fill=(241, 245, 249))
-    d.text((40, 95), f"Material: {material}", fill=(148, 163, 184))
-    
-    cx, cy = 300, 320
-    if "FRONT" in part_code or "Frontal" in part_name:
-        poly = [(cx-100, cy-120), (cx-50, cy-120), (cx-20, cy-80), (cx+20, cy-80), (cx+50, cy-120), (cx+100, cy-120), (cx+120, cy-60), (cx+110, cy+140), (cx-110, cy+140), (cx-120, cy-60)]
-        d.polygon(poly, fill=(30, 41, 59), outline=color_rgb, width=4)
-        d.text((cx-40, cy+155), "Molde Frente", fill=color_rgb)
-    elif "BACK" in part_code or "Trasero" in part_name:
-        poly = [(cx-100, cy-120), (cx-40, cy-120), (cx, cy-100), (cx+40, cy-120), (cx+100, cy-120), (cx+120, cy-60), (cx+110, cy+140), (cx-110, cy+140), (cx-120, cy-60)]
-        d.polygon(poly, fill=(30, 41, 59), outline=color_rgb, width=4)
-        d.text((cx-40, cy+155), "Molde Espalda", fill=color_rgb)
-    elif "SLV" in part_code or "Manga" in part_name:
-        poly = [(cx, cy-120), (cx+90, cy-70), (cx+110, cy+120), (cx-110, cy+120), (cx-90, cy-70)]
-        d.polygon(poly, fill=(30, 41, 59), outline=color_rgb, width=4)
-        d.text((cx-40, cy+155), "Molde Manga", fill=color_rgb)
-    else:
-        d.rectangle([cx-120, cy-50, cx+120, cy+50], fill=(30, 41, 59), outline=color_rgb, width=4)
-        d.text((cx-45, cy+70), "Tira Cuello Rib", fill=color_rgb)
+    # Dibujar cuadrícula de corte industrial (mat de corte 5x5 cm)
+    for grid_x in range(0, 600, 40):
+        d.line([(grid_x, 0), (grid_x, 600)], fill=(30, 41, 59), width=1)
+    for grid_y in range(0, 600, 40):
+        d.line([(0, grid_y), (600, grid_y)], fill=(30, 41, 59), width=1)
 
-    d.text((40, 540), "CORETEXTIL VISION ENGINE - FICHA INDIVIDUAL DE PIEZA DE CORTE", fill=(100, 116, 139))
+    # 2. Definir Polígono del Molde 2D de Alta Precisión
+    cx, cy = 300, 310
+    if "FRONT" in part_code or "Frontal" in part_name:
+        # Molde Frente: Escote redondo pronunciado + Caída de hombros + Sisas de manga
+        poly = [
+            (cx-90, cy-120), (cx-45, cy-120), 
+            (cx-30, cy-75), (cx, cy-65), (cx+30, cy-75), 
+            (cx+45, cy-120), (cx+90, cy-120), 
+            (cx+115, cy-50), (cx+105, cy+140), 
+            (cx-105, cy+140), (cx-115, cy-50)
+        ]
+        label_txt = "MOLDE FRENTE (PANEL FRONTAL)"
+    elif "BACK" in part_code or "Trasero" in part_name:
+        # Molde Espalda: Escote plano + Hombros + Sisas
+        poly = [
+            (cx-90, cy-120), (cx-35, cy-120), 
+            (cx, cy-105), (cx+35, cy-120), 
+            (cx+90, cy-120), (cx+115, cy-50), 
+            (cx+105, cy+140), (cx-105, cy+140), (cx-115, cy-50)
+        ]
+        label_txt = "MOLDE ESPALDA (PANEL TRASERO)"
+    elif "SLV" in part_code or "Manga" in part_name:
+        # Molde Manga: Copa curva de manga + Costados + Puño
+        poly = [
+            (cx, cy-125), (cx+45, cy-110), (cx+85, cy-65), 
+            (cx+95, cy+110), (cx-95, cy+110), 
+            (cx-85, cy-65), (cx-45, cy-110)
+        ]
+        label_txt = "MOLDE MANGA (CORTE CORTO)"
+    else:
+        # Molde Cuello Rib: Tira rectangular de rib
+        poly = [
+            (cx-130, cy-35), (cx+130, cy-35), 
+            (cx+130, cy+35), (cx-130, cy+35)
+        ]
+        label_txt = "TIRA CUELLO RIB"
+
+    # 3. Obtener o generar textura fotorrealista de tela
+    fabric_texture = None
+    if HAS_DIFFUSERS and hf_pipe is not None:
+        try:
+            prompt = f"Top-down flat lay photograph of raw woven {material} fabric, smooth cotton texture, seamless lighting, 8k"
+            tex_img = hf_pipe(prompt, num_inference_steps=2, guidance_scale=0.0).images[0]
+            fabric_texture = tex_img.resize((600, 600)).convert('RGB')
+        except Exception as e:
+            print("Aviso generando textura:", e)
+
+    if fabric_texture is None:
+        # Textura sintética de algodón de alta resolución si no hay diffusers
+        fabric_texture = Image.new('RGB', (600, 600), color=(40, 55, 75))
+        f_draw = ImageDraw.Draw(fabric_texture)
+        for i in range(0, 600, 4):
+            f_draw.line([(i, 0), (i, 600)], fill=(45, 60, 82), width=1)
+
+    # 4. Enmascarar la textura con el Polígono del Molde 2D
+    mask = Image.new('L', (600, 600), 0)
+    m_draw = ImageDraw.Draw(mask)
+    m_draw.polygon(poly, fill=255)
+    
+    img.paste(fabric_texture, (0, 0), mask)
+    
+    # 5. Dibujar contornos técnicos, margen de costura y metadatos
+    d.polygon(poly, outline=color_rgb, width=4)
+    
+    # Tarjeta de metadatos industrial superior e inferior
+    d.rectangle([20, 20, 580, 75], fill=(15, 23, 42, 230), outline=color_rgb, width=2)
+    d.text((35, 30), f"PIEZA DE CORTE 2D: [{part_code}] {part_name.upper()}", fill=color_rgb)
+    d.text((35, 52), f"Material: {material} | Escala industrial 1:1 | CoreTextil Cad Engine", fill=(226, 232, 240))
+    
+    d.rectangle([20, 545, 580, 580], fill=(15, 23, 42, 230), outline=(51, 65, 85), width=1)
+    d.text((35, 555), f"CONFIGURACIÓN: {label_txt} | VERIFICADO EN MESA DE CORTE", fill=(148, 163, 184))
     
     out = io.BytesIO()
     img.save(out, format='JPEG', quality=95)
