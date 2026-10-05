@@ -14,6 +14,7 @@ import PrintHint from "./PrintHint";
 import SizeFactorsEditor from "./SizeFactorsEditor";
 import DownloadPdfButton from "./DownloadPdfButton";
 import MaterialsButtons from "./MaterialsButtons";
+import GarmentAssemblyGraph from "./GarmentAssemblyGraph";
 import { deleteMaterialAction } from "./actions";
 
 export default async function TechSheetPage({
@@ -118,6 +119,16 @@ export default async function TechSheetPage({
             </p>
           </div>
         </header>
+
+        {/* Diagrama Interactivo de Nodos de Ensamble y Rompecabezas 2D */}
+        <GarmentAssemblyGraph
+          garmentName={g.name}
+          referenceCode={g.reference_code}
+          explodedImageUrl={g.ai_exploded_image_url}
+          studioRenderUrl={g.front_image_url}
+          parts={parts ?? []}
+          operations={ops ?? []}
+        />
 
         <section className="mt-6">
           <h2 className="text-sm font-bold uppercase tracking-wide">
