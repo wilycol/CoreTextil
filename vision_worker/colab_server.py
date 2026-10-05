@@ -259,8 +259,24 @@ def generate_individual_part_image(part_code: str, part_name: str, material: str
     """Genera una tarjeta de imagen aislada HD para una PIEZA DE PRENDA específica (garment_parts)"""
     if HAS_DIFFUSERS and hf_pipe is not None:
         try:
-            prompt = f"Flat lay studio photograph of a single isolated garment cut piece: {part_name} [{part_code}], made of {material}, dark navy background, clean textile edges, photorealistic studio lighting, 8k."
-            generated_img = hf_pipe(prompt, num_inference_steps=2, guidance_scale=0.0).images[0]
+            # Mapear descripciones visuales exactas para moldes aislados 2D
+            shape_desc = "flat cloth piece cut out"
+            if "FRONT" in part_code or "Frontal" in part_name:
+                shape_desc = "single flat 2D cut pattern piece of a polo shirt front torso panel"
+            elif "BACK" in part_code or "Trasero" in part_name:
+                shape_desc = "single flat 2D cut pattern piece of a polo shirt back torso panel"
+            elif "SLV" in part_code or "Manga" in part_name:
+                shape_desc = "single flat 2D cut pattern piece of a polo shirt sleeve"
+            elif "CLLR" in part_code or "Cuello" in part_name:
+                shape_desc = "single flat ribbed collar fabric strip piece"
+
+            prompt = (
+                f"Flat lay studio photograph of a {shape_desc}, made of {material}, "
+                f"lying flat on a dark navy industrial cutting table, top-down 90 degree view, "
+                f"isolated single cut pattern piece, clear cloth edges, no full garments, no jeans, "
+                f"clean single piece layout, photorealistic studio lighting, 8k resolution."
+            )
+            generated_img = hf_pipe(prompt, num_inference_steps=4, guidance_scale=0.0).images[0]
             out = io.BytesIO()
             generated_img.save(out, format='JPEG', quality=95)
             return out.getvalue()
@@ -369,8 +385,12 @@ def generate_exploded_canvas(garment_name: str, ref_code: str, parts_list: list,
 def generate_ai_studio_render(name: str, ref_code: str) -> bytes:
     if HAS_DIFFUSERS and hf_pipe is not None:
         try:
-            prompt = f"Professional studio photography of a high-end fashion {name}, reference {ref_code}, laid flat on neutral background, studio lighting, 8k resolution, photorealistic fabric texture."
-            generated_img = hf_pipe(prompt, num_inference_steps=2, guidance_scale=0.0).images[0]
+            prompt = (
+                f"Single isolated fashion {name}, reference {ref_code}, centered front view, "
+                f"laid flat on clean seamless light grey studio background, high definition studio lighting, "
+                f"single garment only, no collage, no multiple shirts, no mannequins, photorealistic fabric texture, 8k."
+            )
+            generated_img = hf_pipe(prompt, num_inference_steps=4, guidance_scale=0.0).images[0]
             out = io.BytesIO()
             generated_img.save(out, format='JPEG', quality=95)
             return out.getvalue()
