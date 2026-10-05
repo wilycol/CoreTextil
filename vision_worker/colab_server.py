@@ -36,6 +36,34 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
+# ------------------------------------------
+# 🎨 HUGGING FACE DIFFUSERS (GENERACIÓN FOTORREALISTA GRATUITA EN GPU)
+# ------------------------------------------
+HAS_DIFFUSERS = False
+hf_pipe = None
+
+def init_hf_diffusers(model_id: str = "stabilityai/sdxl-turbo"):
+    global HAS_DIFFUSERS, hf_pipe
+    try:
+        import torch
+        from diffusers import AutoPipelineForText2Image
+        print(f"🎨 Cargando modelo fotorrealista Hugging Face ({model_id}) en GPU...")
+        hf_pipe = AutoPipelineForText2Image.from_pretrained(
+            model_id, 
+            torch_dtype=torch.float16, 
+            variant="fp16"
+        )
+        if torch.cuda.is_available():
+            hf_pipe.to("cuda")
+            print("🚀 Hugging Face Diffusers cargado en CUDA GPU exitosamente.")
+            HAS_DIFFUSERS = True
+        else:
+            print("⚠️ GPU no disponible. Se omitirá Diffusers para evitar lentitud en CPU.")
+            HAS_DIFFUSERS = False
+    except Exception as e:
+        print(f"ℹ️ HuggingFace diffusers no disponible ({e}). Se usará renderizador vectorial local.")
+        HAS_DIFFUSERS = False
+
 try:
     import google.generativeai as genai
     HAS_GEMINI = True
@@ -229,6 +257,16 @@ def apply_workshop_rules(parts_list: list) -> list:
 # ------------------------------------------
 def generate_individual_part_image(part_code: str, part_name: str, material: str, color_rgb: tuple) -> bytes:
     """Genera una tarjeta de imagen aislada HD para una PIEZA DE PRENDA específica (garment_parts)"""
+    if HAS_DIFFUSERS and hf_pipe is not None:
+        try:
+            prompt = f"Flat lay studio photograph of a single isolated garment cut piece: {part_name} [{part_code}], made of {material}, dark navy background, clean textile edges, photorealistic studio lighting, 8k."
+            generated_img = hf_pipe(prompt, num_inference_steps=2, guidance_scale=0.0).images[0]
+            out = io.BytesIO()
+            generated_img.save(out, format='JPEG', quality=95)
+            return out.getvalue()
+        except Exception as e:
+            print(f"⚠️ Error generando pieza con HF Diffusers ({e}). Usando plantilla vectorial.")
+
     img = Image.new('RGB', (600, 600), color=(15, 23, 42))
     d = ImageDraw.Draw(img)
     
@@ -329,6 +367,16 @@ def generate_exploded_canvas(garment_name: str, ref_code: str, parts_list: list,
 # 🎨 MÓDULO 6: AI FASHION RENDER & TECHNICAL ANNOTATOR
 # ------------------------------------------
 def generate_ai_studio_render(name: str, ref_code: str) -> bytes:
+    if HAS_DIFFUSERS and hf_pipe is not None:
+        try:
+            prompt = f"Professional studio photography of a high-end fashion {name}, reference {ref_code}, laid flat on neutral background, studio lighting, 8k resolution, photorealistic fabric texture."
+            generated_img = hf_pipe(prompt, num_inference_steps=2, guidance_scale=0.0).images[0]
+            out = io.BytesIO()
+            generated_img.save(out, format='JPEG', quality=95)
+            return out.getvalue()
+        except Exception as e:
+            print(f"⚠️ Error generando render con HF Diffusers ({e}). Usando renderizador vectorial.")
+
     img = Image.new('RGB', (1000, 1000), color=(241, 245, 249))
     d = ImageDraw.Draw(img)
     
