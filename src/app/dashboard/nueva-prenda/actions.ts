@@ -17,10 +17,31 @@ export async function runColabVision(input: {
   if (!profile?.tenant_id) return { ok: false, error: "No tienes una marca configurada." };
 
   const supabase = await createClient();
-  const { data: worker } = await supabase.from("ai_vision_worker").select("cloudflare_url, status").eq("id", 1).single();
+  let { data: worker } = await supabase.from("ai_vision_worker").select("cloudflare_url, status").eq("id", 1).single();
+
+  // Si el worker está apagado, disparamos la alerta de encendido del Agente Fénix y esperamos hasta 30s
+  if (!worker || worker.status !== "online" || !worker.cloudflare_url) {
+    console.log("🔥 Agente Fénix: Registrando señal de encendido para Colab Worker...");
+    await supabase.from("ai_vision_worker").update({ status: "waking_up" }).eq("id", 1);
+
+    // Bucle de polling (espera de hasta 30 segundos a que Fénix/Colab responda con status 'online')
+    let retries = 0;
+    while (retries < 10) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      retries++;
+      const { data: polledWorker } = await supabase.from("ai_vision_worker").select("cloudflare_url, status").eq("id", 1).single();
+      if (polledWorker && polledWorker.status === "online" && polledWorker.cloudflare_url) {
+        worker = polledWorker;
+        break;
+      }
+    }
+  }
 
   if (!worker || worker.status !== "online" || !worker.cloudflare_url) {
-    return { ok: false, error: "El motor de visión (Colab) está apagado. Enciéndelo primero." };
+    return { 
+      ok: false, 
+      error: "El motor de visión (Colab) está apagado. El Agente Fénix ha enviado la orden de encendido. Intenta de nuevo en unos segundos." 
+    };
   }
 
   try {
@@ -29,8 +50,6 @@ export async function runColabVision(input: {
     formData.append("name", input.name);
     formData.append("tenantId", profile.tenant_id);
     
-    // Aquí irían los archivos reales en producción, por ahora el worker no los requiere obligatoriamente.
-
     const res = await fetch(`${worker.cloudflare_url}/api/v1/extract`, {
       method: "POST",
       body: formData,
