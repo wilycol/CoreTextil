@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import InviteButton from "./InviteButton";
+import SetupReminderBanner from "./SetupReminderBanner";
 
 type Card = {
   href: string;
@@ -116,18 +117,27 @@ export default async function DashboardPage() {
   let cards: Card[];
   let linkInfo = "";
   let avatarUrl: string | null = (profile as any)?.avatar_url || null;
+  let bannerConfig: { isConfigured: boolean; missingMessage: string; actionUrl: string; actionText: string } | null = null;
 
   if (profile.role === "brand_admin" || profile.role === "designer" || profile.role === "cutter") {
     cards = BRAND_CARDS;
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("name, logo_url")
+      .select("name, logo_url, nit_rut")
       .eq("id", profile.tenant_id)
       .maybeSingle();
       
     if (tenant) {
       linkInfo = `🏢 Marca: ${tenant.name}`;
       if (tenant.logo_url) avatarUrl = tenant.logo_url;
+      if (!tenant.logo_url || !tenant.nit_rut) {
+        bannerConfig = {
+          isConfigured: false,
+          missingMessage: "Tu marca aún no tiene registrado su NIT ni su logo corporativo. Complétalo para personalizar tus fichas técnicas.",
+          actionUrl: "/dashboard/marca",
+          actionText: "Configurar Mi Marca",
+        };
+      }
     }
   } else if (profile.role === "satellite_owner") {
     cards = SATELLITE_CARDS;
@@ -141,6 +151,15 @@ export default async function DashboardPage() {
 
     const workshopName = costProfile?.commercial_name || "Mi Taller Satélite";
     if (costProfile?.logo_url) avatarUrl = costProfile.logo_url;
+
+    if (!costProfile?.commercial_name) {
+      bannerConfig = {
+        isConfigured: false,
+        missingMessage: "Tu taller satélite aún no tiene registrado su Nombre Comercial, maquinaria ni costos fijos. Complétalos para recibir órdenes de corte.",
+        actionUrl: "/dashboard/satelite",
+        actionText: "Configurar Mi Taller",
+      };
+    }
 
     // Obtener marcas vinculadas
     const { data: links } = await supabase
@@ -181,6 +200,16 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {bannerConfig && (
+        <SetupReminderBanner
+          role={profile.role}
+          isConfigured={bannerConfig.isConfigured}
+          missingMessage={bannerConfig.missingMessage}
+          actionUrl={bannerConfig.actionUrl}
+          actionText={bannerConfig.actionText}
+        />
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {avatarUrl ? (
