@@ -115,23 +115,44 @@ export default async function DashboardPage() {
 
   let cards: Card[];
   let linkInfo = "";
+  let avatarUrl: string | null = (profile as any)?.avatar_url || null;
 
   if (profile.role === "brand_admin" || profile.role === "designer" || profile.role === "cutter") {
     cards = BRAND_CARDS;
-    const { data: tenant } = await supabase.from("tenants").select("name").eq("id", profile.tenant_id).single();
-    if (tenant) linkInfo = `🏢 Marca: ${tenant.name} | ID: ${profile.tenant_id}`;
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("name, logo_url")
+      .eq("id", profile.tenant_id)
+      .maybeSingle();
+      
+    if (tenant) {
+      linkInfo = `🏢 Marca: ${tenant.name}`;
+      if (tenant.logo_url) avatarUrl = tenant.logo_url;
+    }
   } else if (profile.role === "satellite_owner") {
     cards = SATELLITE_CARDS;
+
+    // Obtener nombre comercial del taller y logo desde satellite_cost_profiles
+    const { data: costProfile } = await supabase
+      .from("satellite_cost_profiles")
+      .select("commercial_name, logo_url")
+      .eq("satellite_user_id", profile.id)
+      .maybeSingle();
+
+    const workshopName = costProfile?.commercial_name || "Mi Taller Satélite";
+    if (costProfile?.logo_url) avatarUrl = costProfile.logo_url;
+
+    // Obtener marcas vinculadas
     const { data: links } = await supabase
       .from("satellite_links")
       .select("tenants(name)")
       .eq("satellite_user_id", profile.id);
     
     if (links && links.length > 0) {
-      const names = links.map((l: any) => l.tenants?.name).join(", ");
-      linkInfo = `🤝 Vinculado a Marcas: ${names}`;
+      const names = links.map((l: any) => l.tenants?.name).filter(Boolean).join(", ");
+      linkInfo = `🏭 Taller: ${workshopName} | 🤝 Vinculado a Marcas: ${names}`;
     } else {
-      linkInfo = "⚠️ Taller Satélite Independiente (Sin marca vinculada aún)";
+      linkInfo = `🏭 Taller: ${workshopName} (Independiente)`;
     }
   } else if (profile.role === "operator") {
     cards = OPERATOR_CARDS;
@@ -140,7 +161,7 @@ export default async function DashboardPage() {
         .from("profiles")
         .select("full_name")
         .eq("id", profile.satellite_owner_id)
-        .single();
+        .maybeSingle();
       linkInfo = `🏭 Trabajando para el taller satélite de: ${boss?.full_name || "Desconocido"}`;
     } else {
       linkInfo = "💼 Operario Libre (Buscando taller)";
@@ -152,18 +173,31 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Hola, {profile.full_name}</h1>
-          <p className="mt-1 text-slate-400">
-            {profile.role === "operator"
-              ? "Tu taller y tus ganancias, siempre a la mano."
-              : "El estado de tu producción textil en un solo lugar."}
-          </p>
-          {linkInfo && (
-            <p className="mt-2 text-sm font-medium text-cyan-400 bg-cyan-900/20 inline-block px-3 py-1 rounded-md border border-cyan-800/50">
-              {linkInfo}
-            </p>
+        <div className="flex items-center gap-4">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={profile.full_name}
+              className="h-14 w-14 rounded-full border-2 border-cyan-500/50 object-cover shadow-lg shadow-cyan-500/10"
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-800 border-2 border-slate-700 text-xl font-bold text-cyan-400">
+              {profile.full_name.charAt(0).toUpperCase()}
+            </div>
           )}
+          <div>
+            <h1 className="text-2xl font-bold text-slate-100">Hola, {profile.full_name}</h1>
+            <p className="mt-0.5 text-slate-400 text-sm">
+              {profile.role === "operator"
+                ? "Tu taller y tus ganancias, siempre a la mano."
+                : "El estado de tu producción textil en un solo lugar."}
+            </p>
+            {linkInfo && (
+              <p className="mt-2 text-xs font-semibold text-cyan-300 bg-cyan-950/60 inline-block px-3 py-1 rounded-md border border-cyan-500/30 shadow-sm">
+                {linkInfo}
+              </p>
+            )}
+          </div>
         </div>
         {profile.role !== "operator" && <InviteButton role={profile.role} />}
       </div>
@@ -173,7 +207,7 @@ export default async function DashboardPage() {
           <Link
             key={c.href}
             href={c.href}
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-cyan-500 hover:bg-slate-900"
+            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-cyan-500 hover:bg-slate-900 shadow-md hover:shadow-cyan-500/5"
           >
             <h2 className="font-semibold text-cyan-300">{c.title}</h2>
             <p className="mt-2 text-sm text-slate-400">{c.text}</p>
