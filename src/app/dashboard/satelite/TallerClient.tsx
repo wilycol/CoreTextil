@@ -19,6 +19,7 @@ const MACHINES_LIST = [
 
 export default function TallerClient({ initialData }: { initialData?: Partial<SatelliteCostProfilesRow> | null }) {
   const [commercialName, setCommercialName] = useState(initialData?.commercial_name || "");
+  const [logoUrl, setLogoUrl] = useState<string | null>((initialData as any)?.logo_url || null);
   const [maxOperators, setMaxOperators] = useState(initialData?.max_operators?.toString() || "0");
   const [machines, setMachines] = useState<string[]>(initialData?.available_machines || []);
   
@@ -31,6 +32,7 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
   useEffect(() => {
     if (initialData) {
       if (initialData.commercial_name !== undefined) setCommercialName(initialData.commercial_name || "");
+      if ((initialData as any).logo_url !== undefined) setLogoUrl((initialData as any).logo_url || null);
       if (initialData.max_operators !== undefined) setMaxOperators(initialData.max_operators.toString());
       if (initialData.available_machines !== undefined) setMachines(initialData.available_machines || []);
       if (initialData.rent_monthly !== undefined) setRent(initialData.rent_monthly.toString());
@@ -44,6 +46,27 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 256;
+        canvas.height = 256;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 256, 256);
+          setLogoUrl(canvas.toDataURL("image/jpeg", 0.85));
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
 
   function toggleItem(list: string[], setList: (v: string[]) => void, item: string) {
     if (list.includes(item)) {
@@ -65,6 +88,7 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
     startTransition(async () => {
       const res = await updateTallerConfig({
         commercial_name: commercialName,
+        logo_url: logoUrl,
         max_operators: parseInt(maxOperators, 10) || 0,
         available_machines: machines,
         rent_monthly: parseInt(rent, 10) || 0,
@@ -75,7 +99,7 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
       });
 
       if (res.ok) {
-        setSuccess("Configuración de Taller guardada exitosamente.");
+        setSuccess("Configuración e Identidad del Taller guardadas exitosamente.");
       } else {
         setError(res.error ?? "No se pudo guardar la configuración.");
       }
@@ -87,17 +111,40 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
       
       {/* Identidad del Taller */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-cyan-300">1. Identidad Comercial</h2>
-        <label className="block max-w-sm">
-          <span className="mb-1 block text-sm text-slate-400">Nombre Comercial del Taller</span>
-          <input
-            type="text"
-            placeholder="Ej. Confecciones El Sol"
-            value={commercialName}
-            onChange={(e) => setCommercialName(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-cyan-500"
-          />
-        </label>
+        <h2 className="mb-4 text-lg font-semibold text-cyan-300">1. Identidad Comercial & Visual</h2>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-4">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo Taller"
+                className="h-20 w-20 rounded-2xl border-2 border-cyan-500/50 object-cover shadow-lg shadow-cyan-500/10"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900 text-3xl font-bold text-slate-500">
+                🏭
+              </div>
+            )}
+            <div>
+              <label className="inline-block cursor-pointer rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-700 border border-slate-700">
+                <span>{logoUrl ? "Cambiar foto/logo" : "Subir foto del taller"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </label>
+              <p className="mt-1 text-[11px] text-slate-500">Se mostrará en la Red CoreTextil B2B</p>
+            </div>
+          </div>
+
+          <label className="block max-w-sm flex-1">
+            <span className="mb-1 block text-sm text-slate-400">Nombre Comercial del Taller *</span>
+            <input
+              type="text"
+              placeholder="Ej. Confecciones El Sol"
+              value={commercialName}
+              onChange={(e) => setCommercialName(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-cyan-500"
+            />
+          </label>
+        </div>
       </section>
 
       <hr className="border-slate-800" />

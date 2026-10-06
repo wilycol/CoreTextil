@@ -12,6 +12,7 @@ export async function updateTallerConfig(data: {
   consumables_monthly: number;
   maintenance_monthly: number;
   estimated_monthly_units: number;
+  logo_url?: string | null;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -24,19 +25,25 @@ export async function updateTallerConfig(data: {
     .eq("satellite_user_id", user.id)
     .maybeSingle();
 
+  const payload: any = {
+    commercial_name: data.commercial_name,
+    max_operators: data.max_operators,
+    available_machines: data.available_machines,
+    rent_monthly: data.rent_monthly,
+    energy_monthly: data.energy_monthly,
+    consumables_monthly: data.consumables_monthly,
+    maintenance_monthly: data.maintenance_monthly,
+    estimated_monthly_units: data.estimated_monthly_units,
+  };
+
+  if (data.logo_url !== undefined) {
+    payload.logo_url = data.logo_url;
+  }
+
   if (existingProfile) {
     const { error } = await supabase
       .from("satellite_cost_profiles")
-      .update({
-        commercial_name: data.commercial_name,
-        max_operators: data.max_operators,
-        available_machines: data.available_machines,
-        rent_monthly: data.rent_monthly,
-        energy_monthly: data.energy_monthly,
-        consumables_monthly: data.consumables_monthly,
-        maintenance_monthly: data.maintenance_monthly,
-        estimated_monthly_units: data.estimated_monthly_units,
-      })
+      .update(payload)
       .eq("satellite_user_id", user.id);
 
     if (error) return { ok: false, error: error.message };
@@ -45,19 +52,13 @@ export async function updateTallerConfig(data: {
       .from("satellite_cost_profiles")
       .insert({
         satellite_user_id: user.id,
-        commercial_name: data.commercial_name,
-        max_operators: data.max_operators,
-        available_machines: data.available_machines,
-        rent_monthly: data.rent_monthly,
-        energy_monthly: data.energy_monthly,
-        consumables_monthly: data.consumables_monthly,
-        maintenance_monthly: data.maintenance_monthly,
-        estimated_monthly_units: data.estimated_monthly_units,
+        ...payload,
       });
 
     if (error) return { ok: false, error: error.message };
   }
 
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/satelite");
   revalidatePath("/dashboard/satelite/simulador");
   return { ok: true };
