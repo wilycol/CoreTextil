@@ -1,22 +1,45 @@
 {
-  "name": "CoreTextil",
+  "id": "/dashboard",
+  "name": "CoreTextil · Confección y Manufactura Textil",
   "short_name": "CoreTextil",
-  "description": "Marcación de destajo, tickets de faltantes y control de atados para talleres textiles.",
+  "description": "Ecosistema que conecta talleres de corte con satélites de ensamble y operarios a destajo en tiempo real.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Escanear QR Atado",
+      "short_name": "Escanear QR",
+      "description": "Abre el escáner de cámara para recibir o atar un bulto",
+      "url": "/dashboard/escanear",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Marcar Producción",
+      "short_name": "Marcación",
+      "description": "Botones de marcación rápida a destajo del operario",
+      "url": "/dashboard/operario",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

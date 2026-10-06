@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.coretextil.app",
+      "sha256_cert_fingerprints": [
+        "FA:2A:7E:6D:FE:19:64:1C:1E:C5:94:44:CD:7A:B4:EB:FE:78:A8:16:3C:99:99:C9:83:8B:2A:68:F1:C9:1C:1A"
+      ]
+    }
+  }
+]
