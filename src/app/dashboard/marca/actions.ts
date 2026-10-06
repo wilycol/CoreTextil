@@ -35,12 +35,13 @@ export async function updateTenantConfig(data: {
     payload.logo_url = data.logo_url;
   }
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("tenants")
-    .update(payload)
+    .update(payload, { count: "exact" })
     .eq("id", profile.tenant_id);
 
   if (error) return { ok: false, error: error.message };
+  if (count === 0) return { ok: false, error: "No se pudo actualizar la marca en Supabase (verifica los permisos RLS)." };
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/marca");
