@@ -3,6 +3,18 @@
 import { useState } from "react";
 import { unlinkSatellite } from "./actions";
 
+type OrderItem = {
+  id: string;
+  order_number: string;
+  status: string;
+  total_units: number;
+  garment_name: string;
+  operations_count: number;
+  logged_op_units: number;
+  target_op_units: number;
+  progress_percentage: number;
+};
+
 type SatelliteCard = {
   id: string;
   name: string;
@@ -14,7 +26,15 @@ type SatelliteCard = {
   is_configured: boolean;
   joined_at: string;
   active_orders_count: number;
-  orders: { id: string; order_number: string; status: string; total_units: number }[];
+  orders: OrderItem[];
+};
+
+const STATUS_LABELS: Record<string, { label: string; style: string }> = {
+  draft: { label: "Borrador", style: "bg-slate-800 text-slate-300 border-slate-700" },
+  cutting: { label: "En corte", style: "bg-amber-950/80 text-amber-300 border-amber-500/40" },
+  dispatched: { label: "Despachada", style: "bg-indigo-950/80 text-indigo-300 border-indigo-500/40" },
+  in_progress: { label: "En Ensamble", style: "bg-cyan-950/80 text-cyan-300 border-cyan-500/40" },
+  completed: { label: "Completada", style: "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" },
 };
 
 export default function RedClient({
@@ -219,18 +239,78 @@ export default function RedClient({
                   Este taller no tiene órdenes de corte activas asignadas en este momento.
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {selectedSatellite.orders.map((ord) => (
-                    <div key={ord.id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs">
-                      <div>
-                        <span className="font-bold text-cyan-300 block">{ord.order_number}</span>
-                        <span className="text-slate-400">{ord.total_units} prendas</span>
+                <div className="space-y-3">
+                  {selectedSatellite.orders.map((ord) => {
+                    const statusInfo = STATUS_LABELS[ord.status] || {
+                      label: ord.status,
+                      style: "bg-slate-800 text-slate-300 border-slate-700",
+                    };
+
+                    return (
+                      <div
+                        key={ord.id}
+                        className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3 shadow-inner"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono font-bold text-cyan-300 text-sm">
+                                {ord.order_number}
+                              </span>
+                              <span className="text-xs text-slate-400 font-medium">
+                                · {ord.garment_name}
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-400 block mt-0.5">
+                              📦 Lote de atado de corte:{" "}
+                              <strong className="text-slate-200">{ord.total_units} prendas</strong>
+                            </span>
+                          </div>
+                          <span
+                            className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${statusInfo.style}`}
+                          >
+                            {statusInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Barra de Avance de Ensamble en Tiempo Real */}
+                        <div className="space-y-1.5 pt-1 border-t border-slate-900">
+                          <div className="flex items-center justify-between text-xs font-semibold">
+                            <span className="text-slate-300 flex items-center gap-1.5">
+                              <span className="text-emerald-400 animate-pulse">⚡</span> Avance de Ensamble y Conteo Diario:
+                            </span>
+                            <span className="text-cyan-400 font-bold font-mono text-xs">
+                              {ord.progress_percentage}% completado
+                            </span>
+                          </div>
+
+                          {/* Track y Barra de Progreso Gradiente */}
+                          <div className="h-2.5 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden relative">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500 shadow-sm shadow-cyan-500/50"
+                              style={{ width: `${ord.progress_percentage}%` }}
+                            />
+                          </div>
+
+                          {/* Metadatos de Operaciones Registradas */}
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5 flex-wrap gap-1">
+                            <span>
+                              Operaciones por operarios:{" "}
+                              <strong className="text-slate-200">
+                                {ord.logged_op_units}
+                              </strong>{" "}
+                              de {ord.target_op_units} requeridas
+                            </span>
+                            <span className="text-slate-500 italic">
+                              {ord.logged_op_units > 0
+                                ? "🟢 Actualizado en tiempo real"
+                                : "⏳ Sin reporte diario hoy"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="rounded bg-slate-800 px-2 py-1 font-semibold text-slate-300 uppercase text-[10px]">
-                        {ord.status}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
