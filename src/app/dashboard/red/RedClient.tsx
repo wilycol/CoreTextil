@@ -3,6 +3,18 @@
 import { useState } from "react";
 import { unlinkSatellite } from "./actions";
 
+type SubOperation = {
+  id: string;
+  step_order: number;
+  operation_name: string;
+  machine_type: string;
+  base_rate_cop: number;
+  sam_minutes: number | null;
+  logged_units: number;
+  target_units: number;
+  progress_percentage: number;
+};
+
 type OrderItem = {
   id: string;
   order_number: string;
@@ -13,6 +25,7 @@ type OrderItem = {
   logged_op_units: number;
   target_op_units: number;
   progress_percentage: number;
+  operations: SubOperation[];
 };
 
 type SatelliteCard = {
@@ -44,6 +57,7 @@ export default function RedClient({
 }) {
   const [satelliteToRemove, setSatelliteToRemove] = useState<{ id: string; name: string } | null>(null);
   const [selectedSatellite, setSelectedSatellite] = useState<SatelliteCard | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   const [isRemoving, setIsRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -301,12 +315,67 @@ export default function RedClient({
                               </strong>{" "}
                               de {ord.target_op_units} requeridas
                             </span>
-                            <span className="text-slate-500 italic">
-                              {ord.logged_op_units > 0
-                                ? "🟢 Actualizado en tiempo real"
-                                : "⏳ Sin reporte diario hoy"}
-                            </span>
+                            <button
+                              onClick={() =>
+                                setExpandedOrders((prev) => ({
+                                  ...prev,
+                                  [ord.id]: !prev[ord.id],
+                                }))
+                              }
+                              className="text-cyan-400 hover:text-cyan-300 font-semibold text-[11px] flex items-center gap-1 transition underline"
+                            >
+                              {expandedOrders[ord.id]
+                                ? "▲ Ocultar desglose"
+                                : `🔍 Ver desglose por operaciones (${ord.operations.length})`}
+                            </button>
                           </div>
+
+                          {/* Desglose Detallado por Operación Aprobada */}
+                          {expandedOrders[ord.id] && (
+                            <div className="mt-3 pt-3 border-t border-slate-900 space-y-2.5 bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300 block">
+                                  📌 Desglose en Detalle por Operación:
+                                </span>
+                                <span className="text-[10px] text-slate-500 italic">
+                                  {ord.logged_op_units > 0
+                                    ? "🟢 Conteo en tiempo real"
+                                    : "⏳ Pendiente marcación hoy"}
+                                </span>
+                              </div>
+
+                              {ord.operations.length === 0 ? (
+                                <p className="text-xs text-slate-500 italic">
+                                  No hay operaciones de confección mapeadas para esta prenda aún.
+                                </p>
+                              ) : (
+                                ord.operations.map((op) => (
+                                  <div key={op.id} className="space-y-1 bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">
+                                    <div className="flex items-center justify-between text-[11px] flex-wrap gap-1">
+                                      <div className="flex items-center gap-1.5 truncate max-w-[220px] sm:max-w-xs">
+                                        <span className="font-mono text-slate-400 font-bold">#{op.step_order}</span>
+                                        <span className="font-medium text-slate-200 truncate">{op.operation_name}</span>
+                                        <span className="text-[9px] rounded bg-slate-800 px-1.5 py-0.2 text-cyan-300 border border-slate-700">
+                                          {op.machine_type}
+                                        </span>
+                                      </div>
+                                      <span className="font-mono font-bold text-emerald-400 text-[11px]">
+                                        {op.logged_units} / {op.target_units} prendas ({op.progress_percentage}%)
+                                      </span>
+                                    </div>
+
+                                    {/* Barra de Avance Individual por Operación */}
+                                    <div className="h-1.5 w-full rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300"
+                                        style={{ width: `${op.progress_percentage}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

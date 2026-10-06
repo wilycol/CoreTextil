@@ -35,26 +35,35 @@ export default async function RedPage() {
   const activeOrderIds = activeOrderList.map((o: any) => o.id);
   const garmentIds = Array.from(new Set(activeOrderList.map((o: any) => o.garment_id).filter(Boolean)));
 
-  // Carga de operaciones de prenda y de logs de producción diarios de operarios
+  // Carga de operaciones detalladas de prenda y de logs de producción diarios de operarios
   const [{ data: operationsList }, { data: logsList }] = await Promise.all([
     garmentIds.length > 0
-      ? supabase.from("garment_operations").select("id, garment_id").in("garment_id", garmentIds)
+      ? supabase
+          .from("garment_operations")
+          .select("id, garment_id, step_order, operation_name, machine_type, base_rate_cop, sam_minutes")
+          .in("garment_id", garmentIds)
+          .order("step_order")
       : Promise.resolve({ data: [] }),
     activeOrderIds.length > 0
-      ? supabase.from("daily_production_logs").select("order_id, units_completed").in("order_id", activeOrderIds)
+      ? supabase
+          .from("daily_production_logs")
+          .select("order_id, operation_id, units_completed")
+          .in("order_id", activeOrderIds)
       : Promise.resolve({ data: [] }),
   ]);
 
-  // Agrupar conteo de operaciones por prenda
-  const opsCountByGarment: Record<string, number> = {};
+  // Agrupar lista completa de operaciones por prenda
+  const opsByGarment: Record<string, any[]> = {};
   (operationsList ?? []).forEach((op: any) => {
-    opsCountByGarment[op.garment_id] = (opsCountByGarment[op.garment_id] || 0) + 1;
+    if (!opsByGarment[op.garment_id]) opsByGarment[op.garment_id] = [];
+    opsByGarment[op.garment_id].push(op);
   });
 
-  // Agrupar unidades operativas registradas por orden en daily_production_logs
-  const loggedUnitsByOrder: Record<string, number> = {};
+  // Mapa de unidades logeadas por (order_id:operation_id)
+  const logsMap: Record<string, number> = {};
   (logsList ?? []).forEach((log: any) => {
-    loggedUnitsByOrder[log.order_id] = (loggedUnitsByOrder[log.order_id] || 0) + Number(log.units_completed || 0);
+    const key = `${log.order_id}:${log.operation_id}`;
+    logsMap[key] = (logsMap[key] || 0) + Number(log.units_completed || 0);
   });
 
   const profilesMap: Record<string, any> = {};
@@ -92,10 +101,34 @@ export default async function RedPage() {
       joined_at: l.created_at,
       active_orders_count: orders.length,
       orders: orders.map((o: any) => {
-        const opsCount = opsCountByGarment[o.garment_id] || 0;
+        const garmentOps = opsByGarment[o.garment_id] || [];
+        const opsCount = garmentOps.length;
         const totalUnits = Number(o.total_units || 0);
+
+        const operationsDetail = garmentOps.map((op: any) => {
+          const loggedForOp = logsMap[`${o.id}:${op.id}`] || 0;
+          let opPct = 0;
+          if (o.status === "completed") {
+            opPct = 100;
+          } else if (totalUnits > 0) {
+            opPct = Math.min(100, Math.round((loggedForOp / totalUnits) * 100));
+          }
+          return {
+            id: op.id,
+            step_order: op.step_order,
+            operation_name: op.operation_name,
+            machine_type: op.machine_type,
+            base_rate_cop: Number(op.base_rate_cop),
+            sam_minutes: op.sam_minutes != null ? Number(op.sam_minutes) : null,
+            logged_units: loggedForOp,
+            target_units: totalUnits,
+            progress_percentage: opPct,
+          };
+        });
+
         const targetOpUnits = opsCount > 0 ? totalUnits * opsCount : totalUnits;
-        const loggedOpUnits = loggedUnitsByOrder[o.id] || 0;
+        const loggedOpUnits = operationsDetail.reduce((sum, op) => sum + op.logged_units, 0);
+
         let progressPercentage = 0;
         if (o.status === "completed") {
           progressPercentage = 100;
@@ -113,6 +146,7 @@ export default async function RedPage() {
           logged_op_units: loggedOpUnits,
           target_op_units: targetOpUnits,
           progress_percentage: progressPercentage,
+          operations: operationsDetail,
         };
       }),
     };
