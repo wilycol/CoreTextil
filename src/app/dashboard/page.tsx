@@ -157,12 +157,21 @@ export default async function DashboardPage() {
   } else if (profile.role === "operator") {
     cards = OPERATOR_CARDS;
     if (profile.satellite_owner_id) {
-      const { data: boss } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", profile.satellite_owner_id)
-        .maybeSingle();
-      linkInfo = `🏭 Trabajando para el taller satélite de: ${boss?.full_name || "Desconocido"}`;
+      const [{ data: boss }, { data: workshopCost }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", profile.satellite_owner_id)
+          .maybeSingle(),
+        supabase
+          .from("satellite_cost_profiles")
+          .select("commercial_name")
+          .eq("satellite_user_id", profile.satellite_owner_id)
+          .maybeSingle(),
+      ]);
+
+      const workshopName = workshopCost?.commercial_name || (boss?.full_name ? `Taller de ${boss.full_name}` : "Desconocido");
+      linkInfo = `🏭 Trabajando para el taller satélite: ${workshopName}`;
     } else {
       linkInfo = "💼 Operario Libre (Buscando taller)";
     }
