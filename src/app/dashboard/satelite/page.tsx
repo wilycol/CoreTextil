@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import TallerClient from "./TallerClient";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function MiTallerPage() {
-  const { profile } = await getSession();
+  const { profile, userId } = await getSession();
   const supabase = await createClient();
 
   if (profile.role !== "satellite_owner") {
@@ -15,8 +17,8 @@ export default async function MiTallerPage() {
   const { data: costProfile } = await supabase
     .from("satellite_cost_profiles")
     .select("*")
-    .eq("satellite_user_id", profile.id)
-    .single();
+    .eq("satellite_user_id", userId)
+    .maybeSingle();
 
   return (
     <div className="mx-auto max-w-3xl">

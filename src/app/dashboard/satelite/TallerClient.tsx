@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { updateTallerConfig } from "./actions";
 import type { SatelliteCostProfilesRow } from "@/lib/db.types";
 
@@ -27,6 +27,19 @@ export default function TallerClient({ initialData }: { initialData?: Partial<Sa
   const [consumables, setConsumables] = useState(initialData?.consumables_monthly?.toString() || "0");
   const [maintenance, setMaintenance] = useState(initialData?.maintenance_monthly?.toString() || "0");
   const [estimatedUnits, setEstimatedUnits] = useState(initialData?.estimated_monthly_units?.toString() || "1000");
+
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.commercial_name !== undefined) setCommercialName(initialData.commercial_name || "");
+      if (initialData.max_operators !== undefined) setMaxOperators(initialData.max_operators.toString());
+      if (initialData.available_machines !== undefined) setMachines(initialData.available_machines || []);
+      if (initialData.rent_monthly !== undefined) setRent(initialData.rent_monthly.toString());
+      if (initialData.energy_monthly !== undefined) setEnergy(initialData.energy_monthly.toString());
+      if (initialData.consumables_monthly !== undefined) setConsumables(initialData.consumables_monthly.toString());
+      if (initialData.maintenance_monthly !== undefined) setMaintenance(initialData.maintenance_monthly.toString());
+      if (initialData.estimated_monthly_units !== undefined) setEstimatedUnits(initialData.estimated_monthly_units.toString());
+    }
+  }, [initialData]);
   
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateTallerConfig(data: {
@@ -16,12 +17,12 @@ export async function updateTallerConfig(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sesión expirada" };
 
-  // Check if cost profile exists
+  // Check if cost profile exists using maybeSingle to avoid PGRST116 errors
   const { data: existingProfile } = await supabase
     .from("satellite_cost_profiles")
     .select("id")
     .eq("satellite_user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (existingProfile) {
     const { error } = await supabase
@@ -57,5 +58,7 @@ export async function updateTallerConfig(data: {
     if (error) return { ok: false, error: error.message };
   }
 
+  revalidatePath("/dashboard/satelite");
+  revalidatePath("/dashboard/satelite/simulador");
   return { ok: true };
 }
