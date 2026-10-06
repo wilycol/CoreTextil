@@ -20,10 +20,13 @@ export default async function NewOrderPage({
     );
   }
 
-  const { data: garments } = await supabase
-    .from("garments")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: garments } = profile.tenant_id
+    ? await supabase
+        .from("garments")
+        .select("*")
+        .eq("tenant_id", profile.tenant_id)
+        .order("created_at", { ascending: false })
+    : { data: [] };
 
   // Carga de satélites vinculados a la red de la marca
   const { data: links } = await supabase

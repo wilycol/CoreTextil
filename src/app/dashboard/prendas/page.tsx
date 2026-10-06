@@ -15,10 +15,13 @@ export default async function GarmentsPage() {
     );
   }
 
-  const { data: garments } = await supabase
-    .from("garments")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: garments } = profile.tenant_id
+    ? await supabase
+        .from("garments")
+        .select("*")
+        .eq("tenant_id", profile.tenant_id)
+        .order("created_at", { ascending: false })
+    : { data: [] };
 
   return (
     <div>
