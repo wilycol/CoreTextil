@@ -61,6 +61,11 @@ const SATELLITE_CARDS: Card[] = [
     text: "Apunta la cámara a la etiqueta impresa para recibir el bulto y pasar el lote a «En ensamble».",
   },
   {
+    href: "/dashboard/red",
+    title: "Mi red",
+    text: "Marcas afiliadas, órdenes activas en tu taller y cuadrilla de operarios a destajo.",
+  },
+  {
     href: "/dashboard/satelite",
     title: "Mi taller",
     text: "Registra tus costos fijos, calcula tu CFI y simula la rentabilidad de un corte antes de aceptarlo.",
@@ -97,6 +102,11 @@ const OPERATOR_CARDS: Card[] = [
     href: "/dashboard/operario",
     title: "Marcar producción",
     text: "Registra tus piezas con botones rápidos y mira tus ganancias acumuladas.",
+  },
+  {
+    href: "/dashboard/red",
+    title: "Mi red de talleres",
+    text: "Talleres satélites donde trabajas a destajo, historial por taller y billetera acumulada.",
   },
   {
     href: "/dashboard/operario/perfil",

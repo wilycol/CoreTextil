@@ -11,8 +11,9 @@ export default async function RedPage() {
 
   const isBrand = ["brand_admin", "designer", "cutter"].includes(profile.role);
   const isSatellite = profile.role === "satellite_owner";
+  const isOperator = profile.role === "operator";
 
-  if (!isBrand && !isSatellite) {
+  if (!isBrand && !isSatellite && !isOperator) {
     redirect("/dashboard");
   }
 
@@ -164,6 +165,111 @@ export default async function RedPage() {
           </div>
         </div>
         <RedClient role="brand" satellites={satellites} />
+      </div>
+    );
+  }
+
+  // SI ES OPERARIO: Carga los talleres satélites donde ha registrado producción a destajo
+  if (isOperator) {
+    const { data: logs } = await supabase
+      .from("daily_production_logs")
+      .select("order_id, units_completed, earned_amount, logged_at")
+      .eq("operator_id", profile.id);
+
+    const logList = logs ?? [];
+    const orderIds = Array.from(new Set(logList.map((l: any) => l.order_id).filter(Boolean)));
+
+    const { data: orders } = orderIds.length > 0
+      ? await supabase.from("production_orders").select("id, order_number, satellite_user_id, garment_id, garments(name)").in("id", orderIds)
+      : { data: [] };
+
+    const orderMap: Record<string, any> = {};
+    (orders ?? []).forEach((o: any) => {
+      orderMap[o.id] = o;
+    });
+
+    const satelliteUserIds = new Set<string>();
+    if (profile.satellite_owner_id) {
+      satelliteUserIds.add(profile.satellite_owner_id);
+    }
+    (orders ?? []).forEach((o: any) => {
+      if (o.satellite_user_id) satelliteUserIds.add(o.satellite_user_id);
+    });
+
+    const satIdList = Array.from(satelliteUserIds);
+
+    const [{ data: profilesList }, { data: costProfiles }] = satIdList.length > 0
+      ? await Promise.all([
+          supabase.from("profiles").select("id, full_name, email, avatar_url").in("id", satIdList),
+          supabase.from("satellite_cost_profiles").select("*").in("satellite_user_id", satIdList),
+        ])
+      : [{ data: [] }, { data: [] }];
+
+    const profilesMap: Record<string, any> = {};
+    (profilesList ?? []).forEach((p: any) => {
+      profilesMap[p.id] = p;
+    });
+
+    const costProfilesMap: Record<string, any> = {};
+    (costProfiles ?? []).forEach((cp: any) => {
+      costProfilesMap[cp.satellite_user_id] = cp;
+    });
+
+    const workshopTotals: Record<string, { pieces: number; wallet: number; logs: any[] }> = {};
+    satIdList.forEach((id) => {
+      workshopTotals[id] = { pieces: 0, wallet: 0, logs: [] };
+    });
+
+    logList.forEach((l: any) => {
+      const ord = orderMap[l.order_id];
+      const satId = ord?.satellite_user_id || profile.satellite_owner_id;
+      if (satId && workshopTotals[satId]) {
+        workshopTotals[satId].pieces += Number(l.units_completed || 0);
+        workshopTotals[satId].wallet += Number(l.earned_amount || 0);
+        workshopTotals[satId].logs.push({
+          ...l,
+          garment_name: ord?.garments?.name || "Prenda en confección",
+          order_number: ord?.order_number || "Orden #",
+        });
+      }
+    });
+
+    const operatorWorkshops = satIdList.map((id) => {
+      const owner = profilesMap[id];
+      const cp = costProfilesMap[id];
+      const totals = workshopTotals[id] || { pieces: 0, wallet: 0, logs: [] };
+
+      return {
+        id,
+        name: cp?.commercial_name || (owner?.full_name ? `Taller Satélite (${owner.full_name})` : "Taller Satélite"),
+        owner_name: owner?.full_name || "Propietario de Taller",
+        email: owner?.email || "Sin correo",
+        logo_url: cp?.logo_url || owner?.avatar_url || null,
+        is_primary: id === profile.satellite_owner_id,
+        total_pieces: totals.pieces,
+        total_wallet: totals.wallet,
+        logs: totals.logs,
+      };
+    });
+
+    const totalGlobalPieces = operatorWorkshops.reduce((sum, w) => sum + w.total_pieces, 0);
+    const totalGlobalWallet = operatorWorkshops.reduce((sum, w) => sum + w.total_wallet, 0);
+
+    return (
+      <div>
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-100">Mi Red de Talleres Satélites</h1>
+            <p className="mt-1 text-slate-400">
+              Consulta los talleres donde confeccionas a destajo, tu conteo de prendas por taller y tu billetera acumulada.
+            </p>
+          </div>
+        </div>
+        <RedClient
+          role="operator"
+          operatorWorkshops={operatorWorkshops}
+          operatorStats={{ globalPieces: totalGlobalPieces, globalWallet: totalGlobalWallet }}
+        />
       </div>
     );
   }

@@ -64,6 +64,25 @@ type OperatorCard = {
   walletToday: number;
 };
 
+type OperatorWorkshopCard = {
+  id: string;
+  name: string;
+  owner_name: string;
+  email: string;
+  logo_url: string | null;
+  is_primary: boolean;
+  total_pieces: number;
+  total_wallet: number;
+  logs: Array<{
+    order_id: string;
+    order_number: string;
+    garment_name: string;
+    units_completed: number;
+    earned_amount: number;
+    logged_at: string;
+  }>;
+};
+
 const STATUS_LABELS: Record<string, { label: string; style: string }> = {
   draft: { label: "Borrador", style: "bg-slate-800 text-slate-300 border-slate-700" },
   cutting: { label: "En corte", style: "bg-amber-950/80 text-amber-300 border-amber-500/40" },
@@ -77,15 +96,20 @@ export default function RedClient({
   satellites = [],
   brandNetwork = [],
   operators = [],
+  operatorWorkshops = [],
+  operatorStats = { globalPieces: 0, globalWallet: 0 },
 }: {
-  role?: "brand" | "satellite";
+  role?: "brand" | "satellite" | "operator";
   satellites?: SatelliteCard[];
   brandNetwork?: BrandCard[];
   operators?: OperatorCard[];
+  operatorWorkshops?: OperatorWorkshopCard[];
+  operatorStats?: { globalPieces: number; globalWallet: number };
 }) {
   const [satelliteToRemove, setSatelliteToRemove] = useState<{ id: string; name: string } | null>(null);
   const [selectedSatellite, setSelectedSatellite] = useState<SatelliteCard | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<BrandCard | null>(null);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<OperatorWorkshopCard | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
   const [isRemoving, setIsRemoving] = useState(false);
@@ -109,6 +133,215 @@ export default function RedClient({
       setError(res.error ?? "No se pudo remover el satélite.");
       setSatelliteToRemove(null);
     }
+  }
+
+  // SI ES OPERARIO: Mostrar "Mis Talleres Satélites de Confección" y Billetera por Taller
+  if (role === "operator") {
+    return (
+      <div className="space-y-8">
+        {/* Banner de Billetera & Métricas Globales del Operario Multicentro */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-5 shadow-lg shadow-emerald-950/20">
+            <span className="text-xs text-emerald-400 font-bold block mb-1 uppercase tracking-wider">
+              💰 Billetera Global Devengada
+            </span>
+            <span className="text-2xl font-extrabold text-emerald-300 font-mono">
+              ${operatorStats.globalWallet.toLocaleString("es-CO")} COP
+            </span>
+            <p className="text-[11px] text-slate-400 mt-1">Acumulado total por confección a destajo.</p>
+          </div>
+
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-5 shadow-lg shadow-cyan-950/20">
+            <span className="text-xs text-cyan-400 font-bold block mb-1 uppercase tracking-wider">
+              👕 Total Prendas Confeccionadas
+            </span>
+            <span className="text-2xl font-extrabold text-cyan-300 font-mono">
+              {operatorStats.globalPieces} prendas
+            </span>
+            <p className="text-[11px] text-slate-400 mt-1">Unidades completadas en todos tus talleres.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+            <span className="text-xs text-slate-400 font-bold block mb-1 uppercase tracking-wider">
+              🏭 Talleres en tu Red
+            </span>
+            <span className="text-2xl font-extrabold text-slate-200 font-mono">
+              {operatorWorkshops.length} {operatorWorkshops.length === 1 ? "taller" : "talleres"}
+            </span>
+            <p className="text-[11px] text-slate-400 mt-1">Donde registras turnos o destajo.</p>
+          </div>
+        </div>
+
+        {/* Listado de Talleres Satélites de la Red del Operario */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <span>🏭</span> Mis Talleres Satélites de Confección
+              </h2>
+              <p className="text-xs text-slate-400">
+                Talleres vinculados a tu perfil donde laboras a destajo y registras atados de producción.
+              </p>
+            </div>
+          </div>
+
+          {operatorWorkshops.length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-slate-400 shadow-xl">
+              <span className="text-4xl mb-3 block">🏭</span>
+              <h3 className="text-lg font-bold text-slate-200">Aún no tienes talleres registrados en tu red</h3>
+              <p className="mt-1 text-sm text-slate-400 max-w-md mx-auto">
+                Pídele a tu patrón o administrador de taller que te vincule con tu código o escanea un atado en el taller donde laboras.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {operatorWorkshops.map((w: OperatorWorkshopCard) => (
+                <div
+                  key={w.id}
+                  onClick={() => setSelectedWorkshop(w)}
+                  className="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-5 transition-all hover:border-cyan-500/60 hover:shadow-lg hover:shadow-cyan-500/10"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {w.logo_url ? (
+                          <img
+                            src={w.logo_url}
+                            alt={w.name}
+                            className="h-12 w-12 rounded-xl border border-cyan-500/40 object-cover shadow-sm group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 text-xl font-bold text-cyan-400">
+                            🏭
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-bold text-slate-100 text-base leading-snug group-hover:text-cyan-300 transition-colors">{w.name}</h3>
+                          <p className="text-xs text-slate-400 font-medium">Propietario: {w.owner_name}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2 border-t border-slate-800/80 pt-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Tipo de afiliación:</span>
+                        {w.is_primary ? (
+                          <span className="rounded-md bg-emerald-950/80 px-2 py-0.5 font-bold text-emerald-400 border border-emerald-500/30">
+                            ⭐ Taller Principal
+                          </span>
+                        ) : (
+                          <span className="rounded-md bg-cyan-950/80 px-2 py-0.5 font-bold text-cyan-400 border border-cyan-500/30">
+                            🔄 Destajo Alterno
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Confeccionado aquí:</span>
+                        <span className="font-bold text-cyan-300 font-mono">{w.total_pieces} prendas</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Ganancias devengadas:</span>
+                        <span className="font-bold text-emerald-400 font-mono">
+                          ${w.total_wallet.toLocaleString("es-CO")} COP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between border-t border-slate-800/80 pt-3">
+                    <span className="text-xs font-semibold text-cyan-400 group-hover:underline">
+                      Ver Historial de Producción →
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Detalle de Producción por Taller para el Operario */}
+        {selectedWorkshop && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-4">
+                  {selectedWorkshop.logo_url ? (
+                    <img
+                      src={selectedWorkshop.logo_url}
+                      alt={selectedWorkshop.name}
+                      className="h-14 w-14 rounded-2xl border-2 border-cyan-500/50 object-cover shadow-lg shadow-cyan-500/10"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-slate-700 bg-slate-800 text-2xl font-bold text-cyan-400">
+                      🏭
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{selectedWorkshop.name}</h2>
+                    <p className="text-xs text-slate-400 font-medium">Propietario: {selectedWorkshop.owner_name}</p>
+                    {selectedWorkshop.email && <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedWorkshop.email}</p>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedWorkshop(null)}
+                  className="rounded-lg bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Totales en este taller */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                  <span className="text-[11px] text-slate-400 block mb-0.5">Prendas en este Taller</span>
+                  <span className="text-lg font-bold text-cyan-300 font-mono">{selectedWorkshop.total_pieces} prendas</span>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+                  <span className="text-[11px] text-slate-400 block mb-0.5">Billetera Devengada Aquí</span>
+                  <span className="text-lg font-bold text-emerald-400 font-mono">${selectedWorkshop.total_wallet.toLocaleString("es-CO")} COP</span>
+                </div>
+              </div>
+
+              {/* Registros de Producción */}
+              <div className="border-t border-slate-800 pt-4">
+                <h3 className="text-sm font-bold text-slate-300 mb-3">Historial de Registro de Atados:</h3>
+                {selectedWorkshop.logs.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic text-center py-4">
+                    No has registrado marquetes o atados de corte en este taller aún.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {selectedWorkshop.logs.map((log, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                        <div>
+                          <span className="font-bold text-slate-200 block">{log.garment_name}</span>
+                          <span className="text-[11px] text-slate-400 font-mono">{log.order_number} · {log.logged_at}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-cyan-300 block font-mono">+{log.units_completed} prendas</span>
+                          <span className="text-[11px] text-emerald-400 font-bold font-mono">+${Number(log.earned_amount).toLocaleString("es-CO")} COP</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end border-t border-slate-800 pt-4">
+                <button
+                  onClick={() => setSelectedWorkshop(null)}
+                  className="rounded-xl bg-slate-800 px-5 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // SI ES TALLER SATÉLITE: Mostrar "Mi Red de Marcas" y "Mi Cuadrilla de Operarios"
