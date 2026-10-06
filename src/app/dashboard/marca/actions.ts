@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateTenantConfig(data: {
@@ -7,6 +8,7 @@ export async function updateTenantConfig(data: {
   nit_rut: string;
   admin_phone: string;
   admin_address: string;
+  logo_url?: string | null;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,23 +18,31 @@ export async function updateTenantConfig(data: {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!profile || profile.role !== "brand_admin" || !profile.tenant_id) {
-    return { ok: false, error: "No tienes permisos para editar la marca." };
+  if (!profile || !profile.tenant_id) {
+    return { ok: false, error: "No se encontró la organización o marca asociada." };
+  }
+
+  const payload: any = {
+    name: data.name,
+    nit_rut: data.nit_rut,
+    admin_phone: data.admin_phone,
+    admin_address: data.admin_address,
+  };
+
+  if (data.logo_url !== undefined) {
+    payload.logo_url = data.logo_url;
   }
 
   const { error } = await supabase
     .from("tenants")
-    .update({
-      name: data.name,
-      nit_rut: data.nit_rut,
-      admin_phone: data.admin_phone,
-      admin_address: data.admin_address,
-    })
+    .update(payload)
     .eq("id", profile.tenant_id);
 
   if (error) return { ok: false, error: error.message };
 
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/marca");
   return { ok: true };
 }

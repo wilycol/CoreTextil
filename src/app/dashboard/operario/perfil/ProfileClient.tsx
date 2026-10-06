@@ -27,15 +27,37 @@ const SPECIALTIES_LIST = [
   "Vestidos de Baño",
 ];
 
-export default function ProfileClient({ initialData }: { initialData?: Partial<OperatorProfilesRow> | null }) {
+export default function ProfileClient({ initialData }: { initialData?: Partial<OperatorProfilesRow> & { avatar_url?: string | null } | null }) {
   const [phone, setPhone] = useState(initialData?.phone_whatsapp || "");
   const [experience, setExperience] = useState(initialData?.years_of_experience?.toString() || "0");
   const [specialties, setSpecialties] = useState<string[]>(initialData?.specialties || []);
   const [machines, setMachines] = useState<string[]>(initialData?.machines || []);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData?.avatar_url || null);
   
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 256;
+        canvas.height = 256;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 256, 256);
+          setAvatarUrl(canvas.toDataURL("image/jpeg", 0.85));
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
 
   function toggleItem(list: string[], setList: (v: string[]) => void, item: string) {
     if (list.includes(item)) {
@@ -60,6 +82,7 @@ export default function ProfileClient({ initialData }: { initialData?: Partial<O
         years_of_experience: parseInt(experience, 10) || 0,
         specialties,
         machines,
+        avatar_url: avatarUrl,
       });
 
       if (res.ok) {
@@ -73,19 +96,42 @@ export default function ProfileClient({ initialData }: { initialData?: Partial<O
   return (
     <div className="space-y-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
       
-      {/* Contacto */}
+      {/* Contacto e Identidad Visual */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-cyan-300">1. Información de Contacto</h2>
-        <label className="block max-w-sm">
-          <span className="mb-1 block text-sm text-slate-400">WhatsApp / Teléfono</span>
-          <input
-            type="tel"
-            placeholder="+57 300 000 0000"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-cyan-500"
-          />
-        </label>
+        <h2 className="mb-4 text-lg font-semibold text-cyan-300">1. Identidad Visual & Contacto</h2>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-4">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Foto de Perfil"
+                className="h-20 w-20 rounded-full border-2 border-cyan-500/50 object-cover shadow-lg shadow-cyan-500/10"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-slate-700 bg-slate-900 text-3xl font-bold text-slate-500">
+                👤
+              </div>
+            )}
+            <div>
+              <label className="inline-block cursor-pointer rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-700 border border-slate-700">
+                <span>{avatarUrl ? "Cambiar foto de perfil" : "Subir mi foto de perfil"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
+              <p className="mt-1 text-[11px] text-slate-500">Se mostrará en la Bolsa de Operarios</p>
+            </div>
+          </div>
+
+          <label className="block max-w-sm flex-1">
+            <span className="mb-1 block text-sm text-slate-400">WhatsApp / Teléfono *</span>
+            <input
+              type="tel"
+              placeholder="+57 300 000 0000"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-cyan-500"
+            />
+          </label>
+        </div>
       </section>
 
       <hr className="border-slate-800" />

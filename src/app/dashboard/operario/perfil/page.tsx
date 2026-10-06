@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ProfileClient from "./ProfileClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function OperarioPerfilPage() {
   const { profile } = await getSession();
   const supabase = await createClient();
@@ -16,7 +18,9 @@ export default async function OperarioPerfilPage() {
     .from("operator_profiles")
     .select("*")
     .eq("id", profile.id)
-    .single();
+    .maybeSingle();
+
+  const combinedData = opProfile ? { ...opProfile, avatar_url: (profile as any)?.avatar_url || null } : { avatar_url: (profile as any)?.avatar_url || null };
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -27,7 +31,7 @@ export default async function OperarioPerfilPage() {
         </p>
       </div>
 
-      <ProfileClient initialData={opProfile} />
+      <ProfileClient initialData={combinedData} />
     </div>
   );
 }
