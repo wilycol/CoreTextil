@@ -406,10 +406,29 @@ export default async function RedPage() {
     };
   });
 
-  // Agrupar métricas de cuadrilla por operario para el día de hoy
+  // Agrupar métricas de cuadrilla por operario para el día de hoy y acumulado total
   const todayStr = new Date().toISOString().slice(0, 10);
+  const opsByIdMap: Record<string, any> = {};
+  (operationsList ?? []).forEach((op: any) => {
+    opsByIdMap[op.id] = op;
+  });
+
+  const activeOrdersByIdMap: Record<string, any> = {};
+  activeOrderList.forEach((o: any) => {
+    activeOrdersByIdMap[o.id] = o;
+  });
+
   const operatorMetrics: Record<string, { piecesToday: number; walletToday: number }> = {};
+  const operatorTotals: Record<string, { totalPieces: number; totalWallet: number }> = {};
+  const logsByOperator: Record<string, any[]> = {};
+
   (logsList ?? []).forEach((log: any) => {
+    if (!operatorTotals[log.operator_id]) {
+      operatorTotals[log.operator_id] = { totalPieces: 0, totalWallet: 0 };
+    }
+    operatorTotals[log.operator_id].totalPieces += Number(log.units_completed || 0);
+    operatorTotals[log.operator_id].totalWallet += Number(log.earned_amount || 0);
+
     if (log.logged_at === todayStr) {
       if (!operatorMetrics[log.operator_id]) {
         operatorMetrics[log.operator_id] = { piecesToday: 0, walletToday: 0 };
@@ -417,6 +436,23 @@ export default async function RedPage() {
       operatorMetrics[log.operator_id].piecesToday += Number(log.units_completed || 0);
       operatorMetrics[log.operator_id].walletToday += Number(log.earned_amount || 0);
     }
+
+    if (!logsByOperator[log.operator_id]) {
+      logsByOperator[log.operator_id] = [];
+    }
+
+    const opDetail = opsByIdMap[log.operation_id];
+    const ordDetail = activeOrdersByIdMap[log.order_id];
+
+    logsByOperator[log.operator_id].push({
+      logged_at: log.logged_at,
+      units_completed: Number(log.units_completed || 0),
+      earned_amount: Number(log.earned_amount || 0),
+      garment_name: ordDetail?.garments?.name || "Prenda",
+      order_number: ordDetail?.order_number || "Orden #",
+      operation_name: opDetail?.operation_name || "Confección / Ensamble",
+      machine_type: opDetail?.machine_type || "Máquina",
+    });
   });
 
   const operators = (operatorsList ?? []).map((op: any) => ({
@@ -427,6 +463,9 @@ export default async function RedPage() {
     joined_at: op.created_at,
     piecesToday: operatorMetrics[op.id]?.piecesToday || 0,
     walletToday: operatorMetrics[op.id]?.walletToday || 0,
+    totalPieces: operatorTotals[op.id]?.totalPieces || 0,
+    totalWallet: operatorTotals[op.id]?.totalWallet || 0,
+    logs: logsByOperator[op.id] || [],
   }));
 
   return (

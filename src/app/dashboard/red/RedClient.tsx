@@ -62,6 +62,17 @@ type OperatorCard = {
   joined_at: string;
   piecesToday: number;
   walletToday: number;
+  totalPieces: number;
+  totalWallet: number;
+  logs: Array<{
+    logged_at: string;
+    units_completed: number;
+    earned_amount: number;
+    garment_name: string;
+    order_number: string;
+    operation_name: string;
+    machine_type: string;
+  }>;
 };
 
 type OperatorWorkshopCard = {
@@ -110,6 +121,7 @@ export default function RedClient({
   const [selectedSatellite, setSelectedSatellite] = useState<SatelliteCard | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<BrandCard | null>(null);
   const [selectedWorkshop, setSelectedWorkshop] = useState<OperatorWorkshopCard | null>(null);
+  const [selectedOperator, setSelectedOperator] = useState<OperatorCard | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
   const [isRemoving, setIsRemoving] = useState(false);
@@ -462,10 +474,11 @@ export default function RedClient({
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {operators.map((op) => (
+              {operators.map((op: OperatorCard) => (
                 <div
                   key={op.id}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-sm"
+                  onClick={() => setSelectedOperator(op)}
+                  className="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/90 p-5 transition-all hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/10 shadow-sm"
                 >
                   <div>
                     <div className="flex items-center gap-3">
@@ -473,7 +486,7 @@ export default function RedClient({
                         <img
                           src={op.avatar_url}
                           alt={op.full_name}
-                          className="h-12 w-12 rounded-xl border border-emerald-500/40 object-cover shadow-sm"
+                          className="h-12 w-12 rounded-xl border border-emerald-500/40 object-cover shadow-sm group-hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 text-xl font-bold text-emerald-400">
@@ -481,7 +494,7 @@ export default function RedClient({
                         </div>
                       )}
                       <div>
-                        <h3 className="font-bold text-slate-100 text-base leading-snug">{op.full_name}</h3>
+                        <h3 className="font-bold text-slate-100 text-base leading-snug group-hover:text-emerald-300 transition-colors">{op.full_name}</h3>
                         <p className="text-xs text-slate-400 font-mono">{op.email}</p>
                       </div>
                     </div>
@@ -500,12 +513,19 @@ export default function RedClient({
                           ${op.walletToday.toLocaleString("es-CO")} COP
                         </span>
                       </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Acumulado total taller:</span>
+                        <span className="font-mono text-slate-200 font-medium">
+                          {op.totalPieces} prendas (${op.totalWallet.toLocaleString("es-CO")})
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 border-t border-slate-800/80 pt-2 flex items-center justify-between text-[11px] text-slate-500">
-                    <span>Estado: <strong className="text-emerald-400 font-normal">Activo en taller</strong></span>
-                    <span className="font-mono">Destajo Activo</span>
+                  <div className="mt-4 border-t border-slate-800/80 pt-3 flex items-center justify-between text-xs font-semibold text-emerald-400 group-hover:underline">
+                    <span>Ver Ficha y Producción →</span>
+                    <span className="text-[10px] text-slate-500 font-mono font-normal">Destajo</span>
                   </div>
                 </div>
               ))}
@@ -556,7 +576,7 @@ export default function RedClient({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {selectedBrand.orders.map((ord) => {
+                    {selectedBrand.orders.map((ord: OrderItem) => {
                       const statusInfo = STATUS_LABELS[ord.status] || {
                         label: ord.status,
                         style: "bg-slate-800 text-slate-300 border-slate-700",
@@ -606,6 +626,77 @@ export default function RedClient({
                                 style={{ width: `${ord.progress_percentage}%` }}
                               />
                             </div>
+
+                            {/* Metadatos de Operaciones Registradas */}
+                            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 flex-wrap gap-1">
+                              <span>
+                                Operaciones por operarios:{" "}
+                                <strong className="text-slate-200">
+                                  {ord.logged_op_units}
+                                </strong>{" "}
+                                de {ord.target_op_units} requeridas
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setExpandedOrders((prev) => ({
+                                    ...prev,
+                                    [ord.id]: !prev[ord.id],
+                                  }))
+                                }
+                                className="text-cyan-400 hover:text-cyan-300 font-semibold text-[11px] flex items-center gap-1 transition underline"
+                              >
+                                {expandedOrders[ord.id]
+                                  ? "▲ Ocultar desglose"
+                                  : `🔍 Ver desglose por operaciones (${ord.operations.length})`}
+                              </button>
+                            </div>
+
+                            {/* Desglose Detallado por Operación Aprobada */}
+                            {expandedOrders[ord.id] && (
+                              <div className="mt-3 pt-3 border-t border-slate-900 space-y-2.5 bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300 block">
+                                    📌 Desglose en Detalle por Operación:
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 italic">
+                                    {ord.logged_op_units > 0
+                                      ? "🟢 Conteo en tiempo real"
+                                      : "⏳ Pendiente marcación hoy"}
+                                  </span>
+                                </div>
+
+                                {ord.operations.length === 0 ? (
+                                  <p className="text-xs text-slate-500 italic">
+                                    No hay operaciones de confección mapeadas para esta prenda aún.
+                                  </p>
+                                ) : (
+                                  ord.operations.map((op: SubOperation) => (
+                                    <div key={op.id} className="space-y-1 bg-slate-950/60 p-2 rounded-lg border border-slate-800/50">
+                                      <div className="flex items-center justify-between text-[11px] flex-wrap gap-1">
+                                        <div className="flex items-center gap-1.5 truncate max-w-[220px] sm:max-w-xs">
+                                          <span className="font-mono text-slate-400 font-bold">#{op.step_order}</span>
+                                          <span className="font-medium text-slate-200 truncate">{op.operation_name}</span>
+                                          <span className="text-[9px] rounded bg-slate-800 px-1.5 py-0.2 text-cyan-300 border border-slate-700">
+                                            {op.machine_type}
+                                          </span>
+                                        </div>
+                                        <span className="font-mono font-bold text-emerald-400 text-[11px]">
+                                          {op.logged_units} / {op.target_units} prendas ({op.progress_percentage}%)
+                                        </span>
+                                      </div>
+
+                                      {/* Barra de Avance Individual por Operación */}
+                                      <div className="h-1.5 w-full rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                                        <div
+                                          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300"
+                                          style={{ width: `${op.progress_percentage}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -618,6 +709,108 @@ export default function RedClient({
               <div className="flex justify-end gap-3 border-t border-slate-800 pt-4">
                 <button
                   onClick={() => setSelectedBrand(null)}
+                  className="rounded-xl bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Cerrar Ficha
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Ficha Detallada del Operario (Liquidación & Producción por Atado) */}
+        {selectedOperator && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-4">
+                  {selectedOperator.avatar_url ? (
+                    <img
+                      src={selectedOperator.avatar_url}
+                      alt={selectedOperator.full_name}
+                      className="h-16 w-16 rounded-2xl border-2 border-emerald-500/50 object-cover shadow-lg shadow-emerald-500/10"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-slate-700 bg-slate-800 text-3xl font-bold text-emerald-400">
+                      👤
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-xl font-bold text-white">{selectedOperator.full_name}</h2>
+                    <p className="text-xs text-slate-400 font-medium font-mono">{selectedOperator.email}</p>
+                    <span className="mt-1 inline-block rounded-md bg-emerald-950 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
+                      ⚡ Operario a Destajo Registrado
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedOperator(null)}
+                  className="rounded-lg bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Métricas de Ganancia del Operario */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4">
+                  <span className="text-xs text-emerald-400 font-bold block mb-1">Jornada de Hoy</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xl font-extrabold text-emerald-300 font-mono">${selectedOperator.walletToday.toLocaleString("es-CO")} COP</span>
+                    <span className="text-xs text-slate-300 font-bold font-mono">{selectedOperator.piecesToday} prendas</span>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-4">
+                  <span className="text-xs text-cyan-400 font-bold block mb-1">Acumulado Total en Taller</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xl font-extrabold text-cyan-300 font-mono">${selectedOperator.totalWallet.toLocaleString("es-CO")} COP</span>
+                    <span className="text-xs text-slate-300 font-bold font-mono">{selectedOperator.totalPieces} prendas</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Historial Detallado de Operaciones y Atados */}
+              <div className="border-t border-slate-800 pt-4">
+                <h3 className="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between">
+                  <span>Historial de Marcaciones de Confección ({selectedOperator.logs.length}):</span>
+                  <span className="text-xs text-slate-500 italic">Liquidación semanal / quincenal</span>
+                </h3>
+
+                {selectedOperator.logs.length === 0 ? (
+                  <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-6 text-center text-xs text-slate-500">
+                    Este operario no ha registrado marcaciones de atados en las órdenes de corte activas aún.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {selectedOperator.logs.map((log, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800/80 text-xs">
+                        <div className="space-y-0.5 max-w-[280px]">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-200">{log.garment_name}</span>
+                            <span className="font-mono text-cyan-400 font-bold text-[11px]">{log.order_number}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                            <span className="font-medium text-slate-300">{log.operation_name}</span>
+                            <span className="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] text-cyan-300 border border-slate-700">
+                              {log.machine_type}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-mono block">Fecha: {log.logged_at}</span>
+                        </div>
+                        <div className="text-right space-y-0.5">
+                          <span className="font-bold text-cyan-300 block font-mono text-sm">+{log.units_completed} prendas</span>
+                          <span className="text-xs font-bold text-emerald-400 font-mono block">+${log.earned_amount.toLocaleString("es-CO")} COP</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pie del Modal */}
+              <div className="flex justify-end gap-3 border-t border-slate-800 pt-4">
+                <button
+                  onClick={() => setSelectedOperator(null)}
                   className="rounded-xl bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
                 >
                   Cerrar Ficha
