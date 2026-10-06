@@ -25,11 +25,33 @@ export default async function NewOrderPage({
     .select("*")
     .order("created_at", { ascending: false });
 
-  const { data: satellites } = await supabase
-    .from("profiles")
-    .select("id, email, full_name")
-    .eq("role", "satellite_owner")
-    .eq("tenant_id", profile.tenant_id);
+  // Carga de satélites vinculados a la red de la marca
+  const { data: links } = await supabase
+    .from("satellite_links")
+    .select("satellite_user_id")
+    .eq("brand_tenant_id", profile.tenant_id);
+
+  const satelliteUserIds = (links ?? []).map((l: any) => l.satellite_user_id);
+
+  const [{ data: satProfiles }, { data: costProfiles }] = await Promise.all([
+    satelliteUserIds.length > 0
+      ? supabase.from("profiles").select("id, email, full_name").in("id", satelliteUserIds)
+      : Promise.resolve({ data: [] }),
+    satelliteUserIds.length > 0
+      ? supabase.from("satellite_cost_profiles").select("satellite_user_id, commercial_name").in("satellite_user_id", satelliteUserIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const costProfilesMap: Record<string, string> = {};
+  (costProfiles ?? []).forEach((cp: any) => {
+    if (cp.commercial_name) costProfilesMap[cp.satellite_user_id] = cp.commercial_name;
+  });
+
+  const satellitesList = (satProfiles ?? []).map((s: any) => ({
+    id: s.id,
+    email: s.email,
+    full_name: costProfilesMap[s.id] || s.full_name || "Taller Satélite",
+  }));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -42,7 +64,7 @@ export default async function NewOrderPage({
         <NewOrderForm
           garments={(garments ?? []) as GarmentsRow[]}
           preselectedGarment={garmentParam ?? null}
-          satellites={satellites ?? []}
+          satellites={satellitesList}
         />
       </div>
     </div>
