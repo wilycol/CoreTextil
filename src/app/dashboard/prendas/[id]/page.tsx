@@ -15,6 +15,7 @@ import SizeFactorsEditor from "./SizeFactorsEditor";
 import DownloadPdfButton from "./DownloadPdfButton";
 import MaterialsButtons from "./MaterialsButtons";
 import GarmentAssemblyGraph from "./GarmentAssemblyGraph";
+import OperationsEditor from "./OperationsEditor";
 import { deleteMaterialAction } from "./actions";
 
 export default async function TechSheetPage({
@@ -188,6 +189,11 @@ export default async function TechSheetPage({
               </tr>
             </tbody>
           </table>
+
+          {/* Editor Interactivo para Validación de Ruta y Procesos Ocultos por Satélites / Marca */}
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <OperationsEditor garmentId={g.id} initialOperations={ops ?? []} />
+          </div>
         </section>
 
         <section className="mt-6">

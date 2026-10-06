@@ -225,3 +225,77 @@ export async function deleteMaterialAction(formData: FormData): Promise<void> {
   await deleteMaterial(materialId);
   if (garmentId) revalidatePath(`/dashboard/prendas/${garmentId}`);
 }
+
+// ------------------------------------------------------------
+// Gestión de Operaciones de Confección (Ruta de Ensamble y Destajo)
+// ------------------------------------------------------------
+export async function addGarmentOperation(
+  garmentId: string,
+  input: {
+    operation_name: string;
+    machine_type: string;
+    base_rate_cop: number;
+    sam_minutes?: number;
+    step_order?: number;
+  }
+): Promise<Result> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  if (!input.operation_name.trim() || input.base_rate_cop < 0) {
+    return { ok: false, error: "Nombre de operación o tarifa inválida." };
+  }
+
+  let stepOrder = input.step_order;
+  if (!stepOrder) {
+    const { data: existingOps } = await supabase
+      .from("garment_operations")
+      .select("step_order")
+      .eq("garment_id", garmentId)
+      .order("step_order", { ascending: false })
+      .limit(1);
+    stepOrder = (existingOps?.[0]?.step_order ?? 0) + 1;
+  }
+
+  const { error } = await supabase.from("garment_operations").insert({
+    garment_id: garmentId,
+    step_order: stepOrder,
+    operation_name: input.operation_name.trim().slice(0, 150),
+    machine_type: input.machine_type.trim() || "plana",
+    base_rate_cop: input.base_rate_cop,
+    sam_minutes: input.sam_minutes ?? 1.0,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/dashboard/prendas/${garmentId}`);
+  revalidatePath("/dashboard/red");
+  revalidatePath("/dashboard/operario");
+  return { ok: true };
+}
+
+export async function deleteGarmentOperation(
+  operationId: string,
+  garmentId: string
+): Promise<Result> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesión expirada." };
+
+  const { error } = await supabase
+    .from("garment_operations")
+    .delete()
+    .eq("id", operationId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/dashboard/prendas/${garmentId}`);
+  revalidatePath("/dashboard/red");
+  revalidatePath("/dashboard/operario");
+  return { ok: true };
+}
