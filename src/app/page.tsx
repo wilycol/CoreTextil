@@ -6,9 +6,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <span className="text-lg font-bold tracking-tight">
-          Core<span className="text-cyan-400">Textil</span>
-        </span>
+        <Link href="/" className="flex items-center gap-2 group">
+          <img
+            src="/logo.png"
+            alt="CoreTextil"
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+          />
+        </Link>
         <Link
           href="/auth/login"
           className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"

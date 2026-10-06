@@ -19,8 +19,12 @@ export default async function LoginPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-cyan-400">
-          CoreTextil SaaS
+        <div className="mb-6 flex justify-center">
+          <img
+            src="/logo.png"
+            alt="CoreTextil"
+            className="h-12 w-auto object-contain"
+          />
         </div>
         <h1 className="mb-3 text-2xl font-bold text-slate-100">
           Entra a tu taller

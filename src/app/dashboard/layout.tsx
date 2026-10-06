@@ -24,8 +24,12 @@ export default async function DashboardLayout({
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
           <div className="flex items-center gap-4">
             <GlobalBackButton />
-            <Link href="/dashboard" className="text-lg font-bold">
-              Core<span className="text-cyan-400">Textil</span>
+            <Link href="/dashboard" className="flex items-center gap-2 group">
+              <img
+                src="/logo.png"
+                alt="CoreTextil"
+                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+              />
             </Link>
             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-cyan-300">
               {ROLE_LABEL[profile.role] ?? profile.role}
