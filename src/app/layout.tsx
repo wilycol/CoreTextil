@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   description:
     "Ecosistema que conecta talleres de corte con satélites de ensamble y operarios en tiempo real. Cúcuta, Norte de Santander.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icons/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
