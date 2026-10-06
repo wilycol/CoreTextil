@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { inferGarmentDNA, type GarmentDNA } from "@/lib/ai";
 import { formatCop } from "@/lib/cop";
 import { createGarment, runColabVision } from "./actions";
@@ -255,12 +256,21 @@ export default function GarmentForm() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowPhotoGuide(!showPhotoGuide)}
-            className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
-          >
-            {showPhotoGuide ? "Ocultar guía ▲" : "Ver guía visual ▼"}
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/guias/vision-engine"
+              target="_blank"
+              className="rounded-lg bg-cyan-600/30 border border-cyan-500/40 px-3 py-1 text-xs font-bold text-cyan-300 hover:bg-cyan-600/50 transition flex items-center gap-1.5"
+            >
+              <span>✨ Generar fotos con ChatGPT</span>
+            </Link>
+            <button
+              onClick={() => setShowPhotoGuide(!showPhotoGuide)}
+              className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
+            >
+              {showPhotoGuide ? "Ocultar guía ▲" : "Ver guía visual ▼"}
+            </button>
+          </div>
         </div>
 
         {showPhotoGuide && (
