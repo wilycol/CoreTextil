@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 const MASTER_PROMPT = `Actúa como fotógrafo industrial de producto textil para inspección de fichas técnicas de ropa.
-Toma como referencia la prenda que acabo de adjuntar (respetando strictly su color, tipo de tela, silueta y detalles de diseño). 
+Toma como referencia la prenda que acabo de adjuntar (respetando estrictamente su color, tipo de tela, silueta y detalles de diseño). 
 
 IMPORTANTE: Genera 5 ARCHIVOS DE IMAGEN INDEPENDIENTES Y SEPARADOS (una imagen por cada número). NO crees una lámina, infografía ni collage combinando las tomas.
 
@@ -99,6 +99,78 @@ export default function VisionGuidePage() {
             >
               🚀 Ir a Crear Prenda en App
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* PASO A PASO ULTRASENCILLO PARA PRINCIPIANTES / NEÓFITOS */}
+      <div className="rounded-3xl border border-cyan-500/40 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-6 shadow-2xl space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+          <span className="text-2xl">⚡</span>
+          <div>
+            <h2 className="text-sm font-extrabold text-white tracking-wide uppercase">
+              ¿Cómo usar esta guía en 5 sencillos pasos? (Sin conocimientos técnicos)
+            </h2>
+            <p className="text-xs text-slate-400">
+              Sigue esta secuencia súper rápida para crear la Ficha Técnica de cualquier prenda en 2 minutos:
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {/* Paso 1 */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-2 relative hover:border-cyan-500/40 transition">
+            <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300 border border-cyan-500/30">
+              PASO 1
+            </span>
+            <h3 className="text-xs font-bold text-slate-200">1. Copia el Prompt</h3>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              Presiona el botón <strong className="text-cyan-300">«Copiar Prompt Maestro»</strong> de abajo.
+            </p>
+          </div>
+
+          {/* Paso 2 */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-2 relative hover:border-emerald-500/40 transition">
+            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
+              PASO 2
+            </span>
+            <h3 className="text-xs font-bold text-slate-200">2. Abre ChatGPT</h3>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              Haz clic arriba en el botón <strong className="text-emerald-300">«Abrir ChatGPT en Vivo»</strong>.
+            </p>
+          </div>
+
+          {/* Paso 3 */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-2 relative hover:border-indigo-500/40 transition">
+            <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-300 border border-indigo-500/30">
+              PASO 3
+            </span>
+            <h3 className="text-xs font-bold text-slate-200">3. Pega y Sube Foto</h3>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              Pega el prompt en ChatGPT y adjúntale la foto de la prenda que deseas crear.
+            </p>
+          </div>
+
+          {/* Paso 4 */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-2 relative hover:border-amber-500/40 transition">
+            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+              PASO 4
+            </span>
+            <h3 className="text-xs font-bold text-slate-200">4. Descarga Fotos</h3>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              ChatGPT generará las 5 fotos. Guárdalas/descárgalas en tu equipo o celular.
+            </p>
+          </div>
+
+          {/* Paso 5 */}
+          <div className="rounded-2xl border border-cyan-500/40 bg-cyan-950/40 p-4 space-y-2 relative shadow-md shadow-cyan-500/10">
+            <span className="rounded-full bg-cyan-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-200 border border-cyan-400/40">
+              PASO 5 🚀
+            </span>
+            <h3 className="text-xs font-bold text-cyan-300">5. Sube a CoreTextil</h3>
+            <p className="text-[11px] text-slate-300 leading-snug">
+              Sube las 5 fotos en <strong className="text-cyan-300">«Nueva Prenda»</strong> y disfruta la magia del Vision Engine V2.
+            </p>
           </div>
         </div>
       </div>

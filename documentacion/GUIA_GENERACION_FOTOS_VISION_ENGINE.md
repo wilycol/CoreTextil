@@ -5,8 +5,18 @@ Esta guía permite a cualquier marca, diseñador o emprendedor textil generar la
 
 ---
 
+## ⚡ ¿Cómo usar esta guía en 5 sencillos pasos? (Sin conocimientos previos)
+
+1. **PASO 1 · Copia el Prompt**: Presiona el botón **«Copiar Prompt Maestro»** de abajo.
+2. **PASO 2 · Abre ChatGPT**: Haz clic en el botón **«Abrir ChatGPT en Vivo»** (o ingresa a [chatgpt.com](https://chatgpt.com)).
+3. **PASO 3 · Pega y Sube Foto**: Pega el prompt copiado en el chat de ChatGPT y adjúntale la foto de la prenda de referencia que deseas crear.
+4. **PASO 4 · Descarga las Fotos**: ChatGPT generará las 5 fotos de estudio independientes. Descárgalas o guárdalas en tu equipo/celular.
+5. **PASO 5 · Sube a CoreTextil y Disfruta la Magia 🚀**: Vuelve a CoreTextil, dirígete a **«Nueva Prenda»**, sube las 5 fotos y mira cómo el **Vision Engine V2** genera automáticamente el ADN de la prenda, despiece 2D y ruta de confección.
+
+---
+
 ## 🎯 Reglas Fundamentales para ChatGPT:
-1. **Imágenes Separadas**: Se deben solicitar **5 archivos de imagen independientes** (1 imagen por cada ángulo), **NUNCA un collage o lámina combinada**.
+1. **Imágenes Separadas**: Se deben solicitar **5 archivos de imagen independientes** (1 imagen por cada número), **NUNCA un collage o lámina combinada**.
 2. **Revés e Interior Expuesto**: Las fotos de costura (3, 4 y 5) deben mostrar la prenda **volteada al revés (inside-out)** para exponer la puntada industrial real de **Fileteadora 504 (Overlock)**.
 3. **Cinta Métrica Legible**: La Foto 1 debe incluir una cinta métrica nítida con números claros en centímetros para activar el Quality Gate `FULL_PRECISION` (`px → cm`).
 
