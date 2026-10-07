@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GoogleButton from "./GoogleButton";
+import Logo from "@/components/Logo";
 
 export default async function LoginPage({
   searchParams,
@@ -20,11 +21,7 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
         <div className="mb-6 flex justify-center">
-          <img
-            src="/logo.png"
-            alt="CoreTextil"
-            className="h-12 w-auto object-contain"
-          />
+          <Logo heightClass="h-12" />
         </div>
         <h1 className="mb-3 text-2xl font-bold text-slate-100">
           Entra a tu taller

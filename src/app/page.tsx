@@ -1,17 +1,14 @@
 import Link from "next/link";
 import { BRAND_PLANS, SATELLITE_PLANS } from "@/lib/branding";
 import { formatCop } from "@/lib/cop";
+import Logo from "@/components/Logo";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-2 group">
-          <img
-            src="/logo.png"
-            alt="CoreTextil"
-            className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-          />
+          <Logo heightClass="h-10" />
         </Link>
         <Link
           href="/auth/login"

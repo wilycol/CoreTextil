@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import SignOutButton from "./SignOutButton";
 import GlobalBackButton from "./GlobalBackButton";
+import Logo from "@/components/Logo";
 
 const ROLE_LABEL: Record<string, string> = {
   brand_admin: "Marca",
@@ -25,11 +26,7 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-4">
             <GlobalBackButton />
             <Link href="/dashboard" className="flex items-center gap-2 group">
-              <img
-                src="/logo.png"
-                alt="CoreTextil"
-                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
-              />
+              <Logo heightClass="h-8" />
             </Link>
             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-cyan-300">
               {ROLE_LABEL[profile.role] ?? profile.role}
