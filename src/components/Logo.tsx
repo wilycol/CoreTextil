@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LOGO_BASE64, ICON_BASE64 } from "./logo_base64";
 
 interface LogoProps {
   className?: string;
@@ -17,11 +18,11 @@ export default function Logo({
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <img
-          src="/icon.png?v=2"
-          alt="CoreTextil Icon"
+          src={ICON_BASE64}
+          alt="CoreTextil"
           className={`${heightClass} w-auto object-contain`}
         />
-        <span className="text-xl font-extrabold tracking-tight text-slate-100">
+        <span className="text-xl font-black tracking-tight text-white">
           Core<span className="text-cyan-400">Textil</span>
         </span>
       </div>
@@ -30,7 +31,7 @@ export default function Logo({
 
   return (
     <img
-      src="/logo.png?v=2"
+      src={LOGO_BASE64}
       alt="CoreTextil"
       onError={() => setHasError(true)}
       className={`${heightClass} w-auto object-contain transition-transform group-hover:scale-105 ${className}`}
