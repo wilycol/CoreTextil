@@ -46,7 +46,7 @@ export default function LandingClient() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500"></span>
           </span>
-          Ecosistema Neural Nexus · Cúcuta, Norte de Santander
+          Ecosistema Neural Nexus · Plataforma Textil LATAM (Piloto activo en Cúcuta)
         </div>
 
         <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
@@ -440,7 +440,7 @@ export default function LandingClient() {
           </div>
 
           <div className="flex flex-col items-start sm:items-end gap-1.5 text-slate-400">
-            <p>© {new Date().getFullYear()} CoreTextil SaaS. Cúcuta, Norte de Santander.</p>
+            <p>© {new Date().getFullYear()} CoreTextil SaaS · Creado en Cúcuta para Colombia y LATAM.</p>
             <p className="text-xs text-slate-500">
               Liderado e impulsado por{" "}
               <a
