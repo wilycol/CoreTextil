@@ -50,16 +50,15 @@ export default function LandingClient() {
         </div>
 
         <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
-          Tu lote avanzando en vivo,{" "}
+          Tu producción de confección en vivo,{" "}
           <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
-            del corte al operario.
+            de la marca al operario.
           </span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg">
-          Conecta tu taller de corte con los satélites de ensamble y sus operarios.
-          Sin llamadas a ciegas, cuadernos de destajo borrosos ni atados perdidos:
-          fichas con IA, código QR por atado, liquidación a 1 clic y tickets de faltantes unívoquos.
+          Conecta a tu marca, diseñador o taller de corte con los satélites de ensamble y sus operarios.
+          Controla cada orden con fichas en IA, atados trazables con QR, liquidación por destajo a 1 clic y reposición de faltantes sin llamadas ni cuadernos.
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
@@ -420,13 +419,40 @@ export default function LandingClient() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6">
-          <div className="flex items-center gap-2">
-            <Logo heightClass="h-6" />
-            <span className="text-slate-600">| Ecosistema Neural Nexus</span>
+      <footer className="relative z-10 border-t border-slate-900 bg-slate-950 py-10 text-xs text-slate-500">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Logo heightClass="h-6" />
+              <span className="text-slate-600">| Ecosistema Neural Nexus</span>
+            </div>
+            <p className="text-slate-400">
+              CoreTextil es una solución especializada en Inteligencia Artificial desarrollada dentro del{" "}
+              <a
+                href="https://neural-nexus-inky.vercel.app/es"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-cyan-400 transition hover:underline"
+              >
+                Portal Neural Nexus ↗
+              </a>
+            </p>
           </div>
-          <p>© {new Date().getFullYear()} CoreTextil SaaS. Cúcuta, Norte de Santander.</p>
+
+          <div className="flex flex-col items-start sm:items-end gap-1.5 text-slate-400">
+            <p>© {new Date().getFullYear()} CoreTextil SaaS. Cúcuta, Norte de Santander.</p>
+            <p className="text-xs text-slate-500">
+              Liderado e impulsado por{" "}
+              <a
+                href="https://wilycol.github.io/wily-dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-slate-300 transition hover:text-cyan-300 hover:underline"
+              >
+                Wily Col (Lead AI Architect)
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>
