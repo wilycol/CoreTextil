@@ -1,10 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+// Solo rutas internas relativas: evita open-redirects vía ?next.
+// Rechaza URLs absolutas, protocolo-relativas (//) y backslashes.
+function safeNextPath(raw: string | null): string {
+  if (
+    raw &&
+    raw.startsWith("/") &&
+    !raw.startsWith("//") &&
+    !raw.includes("\\")
+  ) {
+    return raw;
+  }
+  return "/dashboard";
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNextPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

@@ -13,7 +13,16 @@ export default async function LoginPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const nextUrl = searchParams.next || "/dashboard";
+  // Solo rutas internas relativas: evita open-redirects vía ?next
+  // (aquí se usa tanto para redirect() como para el enlace de Google).
+  const nextParam = searchParams.next;
+  const nextUrl =
+    nextParam &&
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//") &&
+    !nextParam.includes("\\")
+      ? nextParam
+      : "/dashboard";
 
   if (user) redirect(nextUrl);
 

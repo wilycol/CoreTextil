@@ -41,6 +41,14 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    // Limpia la query original: el destino completo viaja dentro de ?next.
+    url.search = "";
+    // Preserva el destino original (ej. /invite/<token> o ?bundle=...) para que
+    // el callback devuelva al usuario a donde iba tras completar el login.
+    url.searchParams.set(
+      "next",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    );
     return NextResponse.redirect(url);
   }
 
@@ -52,5 +60,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons|sw\\.js).*)",
+  ],
 };

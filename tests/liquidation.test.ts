@@ -28,7 +28,7 @@ describe("Flujo 6: QA Liquidation & Full Route Completion Rule", () => {
   it("debe retornar 0 piezas entregadas si la prenda no tiene operaciones registradas", () => {
     const bundles = [{ id: "b1", units_count: 50 }];
     const totalOps = 0;
-    const logs = [];
+    const logs: { bundle_id: string; operation_id: string; units_completed: number }[] = [];
 
     const delivered = calculateDeliveredUnitsPure(bundles, totalOps, logs);
     expect(delivered).toBe(0);
