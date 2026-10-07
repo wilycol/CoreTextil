@@ -408,6 +408,39 @@ function PersonalLogbook() {
     }
   }
 
+  // Estado para el modal de Ticket de Novedades por WhatsApp
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketReason, setTicketReason] = useState<"missing_piece" | "damaged_fabric" | "quality_return">("missing_piece");
+  const [ticketPrenda, setTicketPrenda] = useState("Jean Dama");
+  const [ticketQty, setTicketQty] = useState("5");
+  const [ticketNotes, setTicketNotes] = useState("Faltan bolsillos traseros en el atado");
+
+  function getTicketWhatsAppUrl() {
+    const reasonLabels = {
+      missing_piece: "⚠️ Pieza Faltante en Atado",
+      damaged_fabric: "✂️ Tela Dañada / Defectuosa",
+      quality_return: "🔍 Devolución por Control de Calidad (Reproceso)",
+    };
+
+    const now = new Date();
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const dayName = days[now.getDay()];
+    const dateStr = `${dayName} ${now.getDate()} de ${now.getFullYear()} · ${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+    const ticketCode = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const text = `🚨 *TICKET FORMAL DE NOVEDAD DE CONFECCIÓN* (${ticketCode})\n\n` +
+      `📌 *Prenda / Ref:* ${ticketPrenda}\n` +
+      `📋 *Motivo / Novedad:* ${reasonLabels[ticketReason]}\n` +
+      `🔢 *Cantidad Afectada:* ${ticketQty} unidades\n` +
+      `📅 *Fecha y Hora:* ${dateStr}\n` +
+      `📝 *Observaciones:* ${ticketNotes || "Sin observaciones adicionales"}\n\n` +
+      `---\n` +
+      `💡 *Nota:* Este ticket fue generado desde el Cuaderno Digital de CoreTextil. Para gestionar atados, reposiciones de faltantes y nómina a 1 clic, registre su taller gratis en: https://coretextil.vercel.app`;
+
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  }
+
   const shareText = `Hola Don Carlos, estoy usando el Cuaderno Digital de CoreTextil para llevar las cuentas de mi destajo. Registre su taller gratis en https://coretextil.vercel.app para que la nómina de todos salga lista a 1 clic.`;
 
   return (
@@ -423,14 +456,22 @@ function PersonalLogbook() {
               Billetera Personal del Día
             </h2>
           </div>
-          <a
-            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
-          >
-            📲 Invitar a mi taller satélite
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowTicketModal(true)}
+              className="rounded-xl border border-amber-500/40 bg-amber-950/60 px-4 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-900"
+            >
+              🚨 Generar Ticket WhatsApp
+            </button>
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
+            >
+              📲 Invitar a mi taller satélite
+            </a>
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-slate-900/80 p-4 border border-slate-800">
@@ -626,6 +667,92 @@ function PersonalLogbook() {
           </div>
         )}
       </div>
+
+      {/* Modal Generador de Ticket WhatsApp */}
+      {showTicketModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                🚨 Generar Ticket Formal de Novedad
+              </h3>
+              <button
+                onClick={() => setShowTicketModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1">Prenda / Referencia</label>
+                <input
+                  type="text"
+                  value={ticketPrenda}
+                  onChange={(e) => setTicketPrenda(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                  placeholder="Ej: Jean Dama Azul"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Motivo de Novedad / Problema</label>
+                <select
+                  value={ticketReason}
+                  onChange={(e) => setTicketReason(e.target.value as any)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                >
+                  <option value="missing_piece">⚠️ Pieza Faltante en Atado (Ej: Faltan bolsillos, mangas)</option>
+                  <option value="damaged_fabric">✂️ Tela Dañada / Defectuosa de fábrica</option>
+                  <option value="quality_return">🔍 Devolución por Control de Calidad (Reproceso de costura)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Cantidad de Piezas Afectadas</label>
+                  <input
+                    type="number"
+                    value={ticketQty}
+                    onChange={(e) => setTicketQty(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Observaciones / Detalle</label>
+                <textarea
+                  value={ticketNotes}
+                  onChange={(e) => setTicketNotes(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                  placeholder="Describe el defecto o pieza faltante..."
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2">
+              <a
+                href={getTicketWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShowTicketModal(false)}
+                className="w-full text-center rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500"
+              >
+                📲 Enviar Ticket Formal por WhatsApp
+              </a>
+              <button
+                onClick={() => setShowTicketModal(false)}
+                className="w-full text-center rounded-xl border border-slate-800 py-2 text-xs text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
