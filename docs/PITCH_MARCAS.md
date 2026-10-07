@@ -1,88 +1,90 @@
-# Pitch · Para diseñadores, dueños de marca y talleres principales
+# Pitch · Para Diseñadores, Dueños de Marca y Talleres Principales de Confección
 
-> "Usted no tiene un problema de producción. Tiene un problema de **información**.
-> Y la información se resuelve con software, no con confianza."
+> "Usted no tiene un problema de producción. Tiene un problema de **información y trazabilidad en vivo**.
+> Y la información no se resuelve con llamadas a ciegas ni cuadernos borrosos: se resuelve con software nativo de Inteligencia Artificial."
 
 ---
 
-## El dolor que usted vive cada semana
+## 💥 El dolor real de la marca de confección
 
-Usted corta 500 prendas el viernes. Las reparte en 12 atados entre 6 talleres satélite
-de Cúcuta. Y desde ese momento **pierde el control**:
+Usted diseña y corta 500 prendas el viernes. Las reparte en 12 atados entre 6 talleres satélite de ensamble. Y desde ese instante **pierde el control**:
 
-- ¿Dónde está el atado M-NEGRO-02? Nadie sabe. "Se lo llevaron el sábado, creo."
-- ¿Cuánto lleva ensamblado cada taller? Se lo preguntan por WhatsApp. Y le responden "ya casi".
-- ¿Le reportaron más piezas de las que usted cortó? Usted **no lo puede detectar**.
-- ¿Cuánto le cuesta de verdad esa prenda? Destajo: sí. ¿Tela? ¿Hilos? ¿Cremalleras? …un aproximado.
-- El pago del taller se convierte en una **negociación de cuadernos**. Y usted paga "por confiar".
+- **¿Dónde está el atado M-NEGRO-02?** Nadie sabe con certeza. "Se lo llevaron el sábado, creo".
+- **¿Cuánto lleva ensamblado cada taller?** Lo pregunta por WhatsApp. Le responden "ya casi", pero no sabe si está en filete, plana o presille.
+- **¿Le cobraron más piezas de las que usted cortó?** Sin control de topes por atado, el sobrerreporte de destajo es indetectable y le cuesta dinero cada semana.
+- **¿Cuánto le cuesta de verdad cada prenda?** Sabe el destajo aproximado, pero ignora los consumos reales de tela por talla e insumos.
+- **El pago del taller se vuelve una discusión de cuadernos rayados.** Y usted termina pagando "por confianza" sin prueba digital.
+- **Las piezas faltantes paralizan lotes.** Si falta un bolsillo o una manga viene dañada, el reclamo se hace de palabra y la prenda queda archivada semanas.
 
-Cada atado perdido es plata. Cada discusión de conteo es tiempo. Cada corte mal calculado
-es margen que se evapora. **Y usted no puede crecer con este nivel de ceguera.**
+Cada atado perdido es dinero evaporado. Cada discusión de conteo es tiempo restado al diseño y a las ventas. **Usted no puede escalar su marca con este nivel de ceguera.**
 
-## CoreTextil: la producción que se ve sola
+---
 
-CoreTextil es la plataforma que conecta su mesa de corte con cada taller satélite y cada
-operario, en tiempo real, desde el celular:
+## 🚀 CoreTextil: La Producción Textil Inteligente que se ve sola
 
-**1. Su ficha técnica, profesional y en un clic.**
-Suba la foto de la prenda: la IA genera el despiece, la ruta de máquinas, los tiempos SAM,
-las tarifas de destajo y los materiales sugeridos. Usted ajusta, guarda, y descarga la
-ficha en **PDF** — lista para enviar con el corte, con el consumo de tela calculado **por
-talla** (una XXL consume más; su ficha lo dice y el taller lo sabe).
+CoreTextil es la plataforma SaaS impulsada por IA que conecta su mesa de corte con cada taller satélite y sus operarios en tiempo real, accesible desde cualquier celular o computador:
 
-**2. Órdenes de corte con atados que no se pierden.**
-Defina la matriz talla×color y CoreTextil genera los atados `REF-TALLA-COLOR-NN` con
-**etiquetas QR imprimibles**. Cada bulto tiene identidad propia. El taller lo escanea al
-recibirlo: usted ve, en ese instante, que su corte llegó y empezó a producirse.
+### 1. ADN de Prenda con IA (Vision Engine V2) en 4 Pasos Sencillos
+Suba la foto o boceto de la prenda. Nuestro **Vision Engine V2** extrae automáticamente el mapa genético completo:
+- 📋 **Ficha Técnica Digital:** Silueta, tipo de prenda, materiales y notas de confección.
+- ✂️ **Desglose de Piezas y Telas:** Moldes, metros de tela por prenda y consumo por talla (XS a XL).
+- 📐 **Tabla de Medidas:** Matriz dimensional para control estricto de tolerancias en taller.
+- ⚙️ **Árbol de Procesos y Costos:** Secuencia secuencial por máquina (Corte, Filete, Plana, Collarín, Presille, Pulido) con tiempos SAM y costos sugeridos por operación.
+- **Exportación en PDF profesional** lista para adjuntar al corte.
 
-**3. El avance real, no el "ya casi".**
-Cada operación marcada por cada operario alimenta su panel. Usted ve prendas completas —
-no promesas — porque una prenda solo cuenta como entregada cuando **toda la ruta de
-operaciones** del atado está terminada.
+### 2. Órdenes de Corte con Atados Trazables por QR
+Defina la matriz talla×color y CoreTextil genera atados únicos `REF-TALLA-COLOR-NN` con **etiquetas QR imprimibles**. 
+Cada bulto adquiere identidad digital. El taller satélite escanea el QR con su celular y usted ve al instante que el corte llegó y comenzó a confeccionarse.
 
-**4. Liquidar en un clic, sin discusiones.**
-Al final del corte, usted liquida por piezas realmente entregadas, con un comprobante
-digital del pago. **Imposible pagar dos veces** (la base de datos lo impide) e imposible
-que le paguen a usted por piezas a medio hacer.
+### 3. Red Neural "Mi Red": Monitoreo en Vivo por Proceso
+Vea en su panel el ecosistema de satélites afiliados. Con un clic sobre cualquier taller, examine la ficha interactiva que detalla:
+- Porcentaje de cumplimiento % en vivo por proceso (Filete, Plana, Collarín, Presille, etc.).
+- Atados activos, piezas procesadas y estado del lote sin necesidad de llamar.
 
-**5. Costo real por prenda, hoy.**
-Destajo + tela + insumos, calculado por la ficha técnica. Con su precio de venta, usted
-conoce su **margen bruto real** antes de producir, no después de lamentarse.
+### 4. Liquidación a 1 Clic sin Duplicidad ni Fraude
+Al terminar el lote, el sistema permite liquidar únicamente los atados con **ruta de operaciones completada al 100%**. 
+Genera un comprobante digital de nómina y la base de datos bloquea cualquier intento de cobrar piezas dos veces o pagar prendas incompletas.
 
-**6. Los faltantes dejan de ser eternos.**
-Cuando un taller reporta una pieza faltante o tela dañada, nace un **ticket con estado**:
-operario → jefe de taller → su mesa de corte → despacho. Nada se resuelve "de palabra".
-Nada se olvida.
+### 5. Mesa de Reposición de Faltantes Unívoqua
+Cuando un satélite reporta una pieza faltante o tela defectuosa, se crea un **Ticket de Nomenclatura Unívoqua**. 
+Usted recibe la alerta en su mesa de corte, prepara la reposición y marca el despacho. Nada se olvida, nada queda de palabra.
 
-## Lo que gana desde el primer corte
+### 6. Margen Real y Costo por Prenda Visible
+Conozca su costo real (Destajo + Tela por talla + Insumos) antes de producir. Compare contra su precio de venta y asegure su margen comercial bruto sin sorpresas.
 
-| Sin CoreTextil | Con CoreTextil |
+---
+
+## 📊 Matriz Comparativa: Antes vs. Con CoreTextil
+
+| Situación Tradicional | Con CoreTextil |
 |---|---|
-| ¿En qué va mi orden? "Ya casi" | Avance por atado y por operación, en vivo |
-| Conteo a mano y discusiones | Tope automático por atado: nadie reporta lo que no existe |
-| Ficha técnica en Word (si existe) | PDF profesional con IA en minutos |
-| Tela que "alcanza o no alcanza" | Consumo calculado por talla y por atado |
-| Pago por confiar | Comprobante digital, entregado verificado |
-| Margen sorpresa al final | Costo real y margen visibles antes de cortar |
-
-## Inversión
-
-- **Piloto de Adopción: $0 por 60 días** — 2 a 3 ciclos completos de corte con todo incluido.
-- Desde **$120.000/mes** (Taller Emprendedor, hasta 3 satélites) hasta **$550.000/mes**
-  (Planta Industrial, satélites ilimitados + reportes contables).
-
-Una sola orden mal liquidada —o un solo atado perdido— le cuesta más que un mes de
-CoreTextil. **El piloto es gratis: lo que arriesga es seguir operando a ciegas.**
-
-## Cierre
-
-Usted no necesita más talleres. Necesita **ver** los que ya tiene.
-CoreTextil le da control total de su producción descentralizada en el celular:
-desde la foto de la prenda hasta el último peso pagado.
-
-**Cree su primera prenda hoy y descargue su ficha técnica en PDF. Si en 60 días
-no le cambia la forma de producir, no le costó nada. Si le cambia —como a todos
-los que lo prueban—, usted nunca más producirá sin información.**
+| ¿En qué va mi orden? *"Ya casi"* | Avance en vivo por atado y por proceso en **Mi Red** |
+| Conteo manual en cuadernos y discusiones | **Tope automático por atado** en base de datos: nadie reporta de más |
+| Ficha técnica en Word o de palabra | **Ficha Técnica y ADN en PDF con IA (Vision Engine V2)** |
+| Desperdicio de tela sin calcular | Consumo exacto por talla (factores de consumo corregidos) |
+| Pagos por confianza o aproximados | Comprobante digital unívoco, liquidación a 1 clic |
+| Piezas faltantes olvidadas en el taller | Tickets con nomenclatura unívoqua y flujo de despacho |
+| Control limitado a la planta local | Conexión remota PWA y Android para Colombia y LATAM |
 
 ---
-*CoreTextil SaaS · Hecho para el ecosistema textil de Cúcuta.*
+
+## 💰 Inversión Transparente
+
+- **Piloto de Adopción: $0 por 60 días** — 2 a 3 ciclos completos de corte con acceso total para su marca.
+- **Taller Emprendedor: $120.000 COP / mes** — Hasta 3 satélites conectados, atados e IA ilimitada.
+- **Marca Pro: $280.000 COP / mes** — Hasta 10 satélites, telemetría en vivo y soporte preferencial.
+- **Planta Industrial: $550.000 COP / mes** — Satélites ilimitados + reportes contables consolidados.
+
+*Una sola orden mal liquidada o un par de atados perdidos cuestan más que la suscripción de CoreTextil. El piloto es gratis.*
+
+---
+
+## 📌 Cierre
+
+Usted no necesita más talleres satélites: necesita **visibilidad y trazabilidad en vivo** sobre los que ya utiliza.
+CoreTextil pone el control total de su producción descentralizada en la palma de su mano, desde la foto inicial con IA hasta la liquidación del último operario.
+
+**Cree su primera prenda hoy, genere el ADN de su diseño y descargue su ficha técnica en PDF. Compruebe cómo la tecnología transforma su marca.**
+
+---
+*CoreTextil SaaS · Plataforma Textil LATAM (Desarrollada en el Ecosistema Neural Nexus).*

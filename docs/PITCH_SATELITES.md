@@ -1,95 +1,86 @@
-# Pitch · Para talleres satélite y operarios
+# Pitch · Para Talleres Satélite de Ensamble y Confección
 
-> "Usted pone las máquinas, la luz, el talento y las horas. **Lo mínimo que merece
-> es que las cuentas estén claras.** CoreTextil existe para que el destajo deje de
-> ser un caballo de pelea."
+> "Usted pone las máquinas, el espacio, los servicios, el talento y las jornadas de trabajo.
+> **Lo mínimo que merece es que las cuentas del destajo estén claras y que su taller nunca cosidos a pérdida.**"
 
 ---
 
-## La realidad del taller satélite
+## 🏭 La realidad diaria del taller satélite
 
-Usted recibe un bulto de 40 prendas con una hoja volada —si la hay—. Sus operarios
-cosen a destajo. Y cada quincena se repite la misma película:
+Usted recibe un bulto de 40 prendas con una nota manuscrita o sin hoja de ruta. Sus operarios cosen a destajo. Y cada pago se repite el mismo dolor de cabeza:
 
-- **"¿Cuántas piezas fueron?"** — El conteo se hace de memoria, entre apuntes en un cuaderno y lo que "recuerda" cada quien.
-- **Acepta cortes sin saber si le dejan algo.** ¿Cuánto es de la luz? ¿Del arriendo? ¿De su tiempo? Si no conoce su costo por prenda, está jugando a la ruleta con la plata de su taller.
-- **Las piezas que faltan son SU problema.** Un atado llegó incompleto, la tela venía dañada… y eso se discute de palabra, sin prueba alguna.
-- **Sus operarios desconfían.** No porque usted robe —sino porque **nadie ve los números**. Y donde no hay números, sobra la discusión.
+- **"¿Cuántas piezas cosió cada quien?"** — El conteo se hace de memoria o apuntado en cuadernos rayados que se traspapelan.
+- **Acepta órdenes sin saber si le dejan ganancia real.** ¿Cuánto se le va en arriendo, luz, agujas, hilos y mantenimiento? Si no conoce su costo fijo por prenda, está arriesgando el capital de su taller.
+- **Las piezas faltantes se convierten en su pérdida.** Si un atado llegó incompleto o la tela venía defectuosa, el reclamo de palabra termina en discusiones con la marca.
+- **Sus operarios desconfían del conteo.** No por mala fe, sino porque **nadie ve los números en tiempo real**. Donde no hay cifras transparentes, abunda la desconfianza.
 
-Usted no gana poco por falta de talento: gana poco porque **el negocio no le muestra
-sus propios números**. Y los faltantes siempre acaban siendo su pérdida.
+Usted no trabaja poco por falta de empeño: su taller no rinde lo suficiente porque **el negocio carece de herramientas para mostrar sus números reales**.
 
-## CoreTextil: el cuaderno que nadie puede borrar
+---
 
-CoreTextil es una app gratuita (sí, **gratis para siempre** si trabaja con una marca)
-que convierte su taller en una operación transparente:
+## ⚡ CoreTextil Satélite: El taller inteligente en su teléfono móvil
 
-**1. Su bolsillo, a la vista de todos.**
-Cada operario entra con su celular y marca lo que produce con **botones gigantes**
-(+10 / +25 / +50). La app muestra al instante su **billetera del día**: piezas y pesos
-ganados. Su operario ya no pregunta "¿cuánto me debo?" — **lo ve en pantalla, con
-número exacto.** Eso es confianza que no se compra.
+CoreTextil es una aplicación accesible desde cualquier celular Android o PWA web que transforma su taller en un centro de confección organizado y transparente:
 
-**2. Nadie reporta más de lo que hay — y nadie le recorta lo que sí hizo.**
-El sistema aplica un **tope por atado**: si el bulto trae 40 piezas, nadie puede
-marcar 41, ni su operario, ni nadie. Y del otro lado, **lo que su operario sí marcó
-queda registrado con fecha y valor**. Imposible olvidarlo. Imposible discutirlo.
+### 1. Simulador de Costos Fijos (CFI) y Semáforo de Rentabilidad
+Registre una sola vez los costos fijos de su taller (arriendo, energía, consumibles, mantenimiento, plantilla). 
+El **Simulador CFI** analiza la tarifa ofrecida por la marca y le muestra un semáforo de rentabilidad antes de aceptar la orden:
+- 🟢 **Verde (Rentable):** Margen asegurado para su taller. ¡Acéptelo!
+- 🟡 **Amarillo (Ajustado):** Negocie la tarifa o ajuste tiempos.
+- 🔴 **Rojo (A pérdida):** El corte no cubre sus costos fijos. ¡Rechácelo o renegocie!
 
-**3. Sepa si un corte le conviene ANTES de aceptarlo.**
-Registre una sola vez sus costos fijos (arriendo, luz, consumibles, mantenimiento).
-El **simulador** le muestra con un semáforo si el corte le deja margen:
-🟢 **Rentable** — tómelo · 🟡 **Ajustado** — negocie · 🔴 **A pérdida** — rechácelo.
-Un taller que conoce su costo fijo unitario **deja de regalar trabajo**.
+*Nunca más un taller satélite coserá a pérdida por falta de datos.*
 
-**4. La tela exacta para cada atado, sin adivinar.**
-Al escanear el QR del bulto, la app le dice **qué coser** (operación por operación,
-con su tarifa) y **cuánta tela e insumos** necesita: calculada para la talla y las
-unidades exactas de ESE atado. Ni sobrantes raros, ni faltantes de última hora.
+### 2. Recepción de Atados por Código QR
+Al llegar los bultos de tela cortada, escanee el código QR desde la cámara del celular. 
+La app registra la recepción automáticamente, valida las unidades del atado y despliega la ruta de máquinas con las tarifas exactas de cada operación.
 
-**5. Los faltantes dejan de ser su perdida.**
-¿Llegó una pieza faltante? ¿Tela dañada? Reporte el **ticket** desde el celular, con
-el código del atado y la cantidad. Su jefe —usted— lo valida con un toque y la marca
-recibe el aviso. **Queda la prueba**: usted ya no carga con lo que otros despacharon mal.
+### 3. Ficha Interactiva de la Marca y Avance por Proceso
+Consulte en **Mi Red** la ficha interactiva de las marcas para las que trabaja. Observe en tiempo real:
+- Porcentaje de cumplimiento % por cada proceso de ensamble (Corte, Filete, Plana, Collarín, Presille, Pulido).
+- Estado de cada atado recibido y entregado.
 
-**6. Su nómina, en un clic.**
-Liquide a sus operarios por semana, quincena o mes, con el desglose exacto por persona
-y un comprobante guardado. La nómina de destajo más rápida de Cúcuta.
+### 4. Cuadrilla de Operarios e Historial Cronológico
+Administre a su equipo en el módulo **Mi Cuadrilla de Operarios**. Al seleccionar cualquier operario, acceda a su ficha interactiva con:
+- Resumen acumulado de piezas procesadas y saldo ganado en el día o semana.
+- **Historial cronológico detallado:** Fecha, código de atado, operación realizada, cantidad y valor liquidado por pieza.
 
-## Y para el operario: su plata, claro como el agua
+### 5. Reporte de Tickets de Faltantes con Nomenclatura Unívoqua
+¿Faltó un bolsillo o la tela llegó manchada? El operario o usted reportan un **Ticket de Faltante** indicando el código de atado y la cantidad. 
+Usted lo aprueba con un toque y la marca recibe la notificación en su mesa de reposición. Queda la evidencia registrada y su taller no asume pérdidas ajenas.
 
-- Marca sus piezas desde el celular en **dos toques**.
-- Ve sus **pesos ganados al momento**, acumulados del día.
-- Su trabajo **queda registrado**: ni más ni menos de lo que produjo, con valor exacto por operación.
-- Cuando algo falta, **lo reporta con pruebas** y se resuelve con estados, no con gritos.
-- La app se instala en su teléfono como una aplicación más. **No necesita nada más.**
+### 6. Liquidación de Nómina de Destajo a 1 Clic
+Seleccione el periodo (semanal, quincenal o personalizado) y CoreTextil calcula la liquidación de cada operario de forma matemática e inmodificable, generando un **Comprobante Digital de Pago** listo para guardar o imprimir.
 
-## Lo que cambia en su taller
+---
 
-| Hoy | Con CoreTextil |
+## 📊 Tabla Comparativa: Taller Tradicional vs. Taller CoreTextil
+
+| Taller Tradicional | Taller Satélite con CoreTextil |
 |---|---|
-| Conteo en cuaderno | Registro digital con tope automático |
-| "¿Cuánto me debo?" cada semana | Billetera visible en el celular de cada operario |
-| Aceptar cortes a ciegas | Semáforo de rentabilidad antes de aceptar |
-| Faltantes de palabra | Tickets con estado y prueba |
-| Nómina a mano un día entero | Liquidación por periodo en un clic |
-
-## Precio
-
-- **Satélite Monomarca: $0 — gratis para siempre.** Trabaje con una marca y use toda la plataforma: escáner, marcación, tickets, simulador y nómina.
-- **Satélite Pro: $50.000/mes** (o $450.000/año) — si trabaja con 2 o más marcas, con control unificado de su taller.
-
-**No le cuesta probarlo. Le cuesta seguir sin saber sus números.**
-
-## Cierre
-
-Los mejores talleres de Cúcuta no van a crecer por suerte. Van a crecer los que
-**midan**: cuánto entra, cuánto cuesta, cuánto gana cada operario y si cada corte
-les deja margen.
-
-CoreTextil le pone esos números en el bolsillo. **Gratis.**
-
-**Entre hoy con Google, vincúlese a su marca y reciba su primer atado con QR.
-Desde el primer bulto, su taller funciona con números — no con memoria.**
+| Apuntes en cuadernos rayados borrosos | Registro digital con tope automático por atado |
+| Discusiones de conteo al liquidar | Ficha interactiva de operario con billetera del día |
+| Aceptar órdenes a ciegas sin calcular costo | Semáforo de rentabilidad CFI antes de aceptar |
+| Reclamos de faltantes de palabra | Tickets con nomenclatura unívoqua y trazabilidad |
+| Pérdida de tiempo liquidando nómina a mano | Liquidación de destajo unificada a 1 clic |
+| Necesidad de computadores costosos | 100% operativo desde celulares Android (PWA/TWA) |
 
 ---
-*CoreTextil SaaS · Hecho para los talleres satélite y operarios de Cúcuta.*
+
+## 🏷️ Planes y Precios Transparentes
+
+- **Satélite Monomarca: $0 COP — Gratis para siempre.** Si trabaja con una marca registrada en la plataforma, disfrute de todo el sistema de forma gratuita (escáner QR, marcación, tickets, cuadrilla, simulador CFI y nómina).
+- **Satélite Pro: $50.000 COP / mes** (o $450.000 COP / año) — Para talleres multi-marca que ensamblan órdenes de 2 o más marcas en simultáneo con control unificado.
+
+---
+
+## 📌 Cierre
+
+Los talleres satélites que van a prosperar no son los que más horas trabajen a ciegas, sino los que **midan su negocio**: costo por prenda, rendimiento por operario y margen real por corte.
+
+CoreTextil le entrega esa tecnología en su propio celular Android. **Gratis.**
+
+**Inicie sesión con Google, vincúlese a su marca y escanee su primer atado con QR. Lleve su taller al siguiente nivel.**
+
+---
+*CoreTextil SaaS · Creado para los Talleres Satélites de Confección en Colombia y LATAM.*

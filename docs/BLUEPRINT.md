@@ -1,133 +1,113 @@
 # CoreTextil SaaS · Blueprint Técnico
 
-**Producto**: Plataforma SaaS multi-tenant que digitaliza el ciclo de producción textil
-descentralizado (marca → taller de corte → satélites de ensamble → operarios).
-**Mercado inicial**: Cúcuta, Norte de Santander, Colombia.
-**Este documento reemplaza al blueprint original**: está sincronizado con el código implementado (repositorio `coretextil`).
+**Producto**: Plataforma SaaS multi-tenant impulsada por Inteligencia Artificial que digitaliza y conecta el ciclo de producción textil descentralizado (marca/diseñador → mesa de corte → satélites de ensamble → operarios).
+**Alcance**: Colombia y Latinoamérica (LATAM) · Piloto de campo activo en Cúcuta, Norte de Santander.
+**Estado**: Producción funcional verificada (`tsc` 0 errores, `next build` 26 rutas optimizadas, PWA & TWA Android Ready).
 
 ---
 
-## 1. Visión del producto
+## 1. Visión y Arquitectura del Producto
 
-En Cúcuta miles de prendas se cortan en un taller principal y se ensamblan de forma
-descentralizada en "talleres satélite" (patios, casas, pequeños talleres familiares).
-Hoy ese flujo se coordina con cuadernos, WhatsApp y desconfianza: se pierden atados,
-los pagos se discuten, los operarios no saben cuánto ganaron y las marcas no saben
-en qué va su producción hasta que llega tarde.
+En la industria de la confección, miles de prendas se cortan en un taller principal y se ensamblan de forma descentralizada en talleres satélite (patios, pequeñas plantas familiares). Históricamente, este flujo operaba bajo opacidad: cuadernos rayados, llamadas a ciegas, atados traspapelaos y discusiones en la liquidación de destajo.
 
-CoreTextil convierte ese caos en un flujo trazable y verificable:
+CoreTextil convierte ese caos en un **Ecosistema Neural Trazable y Verificable**:
 
-1. La **marca** crea el ADN de la prenda (despiece, ruta de máquinas, SAM, tarifas y materiales).
-2. Emite una **orden de corte** con matriz talla×color; el sistema genera **atados unívocos**
-   (`REF-TALLA-COLOR-NN`) con **etiquetas QR** imprimibles.
-3. El **satélite** recibe cada atado escaneando su QR (recepción única e idempotente).
-4. Los **operarios** marcan su destajo con botones rápidos; la base de datos aplica un
-   **tope estricto por atado y operación** (no se puede reportar más de lo cortado).
-5. Las novedades (piezas faltantes, tela dañada) viajan como **tickets** con estado,
-   del operario al jefe del satélite y de este a la mesa de corte de la marca.
-6. La marca **liquida por entregado** (solo atados con la ruta completa al 100%) y el
-   satélite liquida **nómina** a sus operarios a un clic.
+1. **La Marca / Diseñador** crea el **ADN de la Prenda** mediante el **Vision Engine V2** (Ficha técnica digital, despiece, consumos de tela por talla, tabla de medidas y árbol de procesos con tiempos SAM y costos por máquina).
+2. Emite una **Orden de Corte** basada en la matriz talla×color; el sistema genera **atados unívocos** (`REF-TALLA-COLOR-NN`) con **etiquetas QR imprimibles**.
+3. El **Taller Satélite** recibe el bulto escaneando el código QR desde su celular (recepción única e idempotente en la base de datos).
+4. El taller consulta su **Simulador de Costos Fijos (CFI)** para asegurar su margen de ganancia antes de coser.
+5. Los **Operarios** marcan su destajo en vivo desde su móvil con botones rápidos. La base de datos aplica un **lock estricto por atado y operación** (evitando el sobrerreporte de piezas).
+6. En **"Mi Red"**, la marca y el satélite monitorean el avance porcentual % por cada proceso de ensamble (Corte, Filete, Plana, Collarín, Presille, Pulido).
+7. Las novedades (piezas faltantes o tela defectuosa) se gestionan mediante **Tickets con Nomenclatura Unívoqua** (operario → jefe de taller → mesa de corte).
+8. La marca **liquida por entregado al 100% de la ruta**, y el satélite liquida la **nómina de destajo a 1 clic** con comprobante digital inmodificable.
 
-## 2. Stack tecnológico (implementado)
+---
+
+## 2. Stack Tecnológico
 
 | Capa | Tecnología | Rol |
 |---|---|---|
-| Frontend | Next.js 16 (App Router) + React 19 + Tailwind 4 | PWA instalable, server components |
-| Backend | Server Actions + Route Handlers (`/api/v1/*`) | Mutaciones y API pública interna |
-| Base de datos | Supabase (PostgreSQL 15) | Modelo relacional multi-tenant |
-| Seguridad | RLS + `current_profile()` (SECURITY DEFINER) | Aislamiento por tenant en la base, no en la app |
-| Auth | Supabase Auth + Google SSO | Un perfil automático por usuario (`handle_new_user`) |
-| IA | Gemini 2.0 Flash (visión) + fallback heurístico local | Foto/boceto → ADN de prenda |
-| QR | `qrcode` (generación server-side) + `jsqr` (escaneo con cámara) | Ciclo completo del atado |
-| PDF | `jspdf` + `jspdf-autotable` (cliente) | Ficha técnica descargable |
-| Hosting | Vercel (serverless) + Supabase (managed Postgres) | Despliegue ver `docs/DEPLOY.md` |
+| Frontend | Next.js 16 (App Router) + React 19 + Tailwind 4 | PWA táctil instalable + TWA Android (Play Store Ready) |
+| Brand Assets | Componente `Logo.tsx` + `logo_base64.ts` | Renderizado Base64 embebido en 0ms (resistente a fallas de red/caché) |
+| Backend | Server Actions + Route Handlers (`/api/v1/*`) | Mutaciones y API pública interna serverless |
+| Base de datos | Supabase (PostgreSQL 15) | Modelo relacional multi-tenant con RLS |
+| Seguridad | RLS + `current_profile()` (SECURITY DEFINER) | Aislamiento estricto por tenant en la base de datos |
+| Auth | Supabase Auth + Google SSO | Perfil automático por usuario (`handle_new_user`) |
+| IA | Vision Engine V2 (Gemini / ChatGPT multimodal) + fallback local | Foto/boceto → ADN de prenda (Ficha técnica + Despiece + Matriz + Árbol de procesos) |
+| QR | `qrcode` (server-side) + `jsqr` (cliente en vivo) | Escaneo rápido desde teléfonos móviles |
+| PDF | `jspdf` + `jspdf-autotable` | Ficha técnica descargable con despiece y costos |
+| Android Integration | PWA / TWA + `.well-known/assetlinks.json` | Publicación en Google Play Store |
+| Hosting | Vercel (CI/CD) + Supabase (Managed Postgres) | Infraestructura serverless de alta velocidad |
 
-## 3. Arquitectura y flujo de datos
+---
+
+## 3. Arquitectura y Flujo de Datos "Mi Red"
 
 ```
-┌─────────────┐   QR labels   ┌──────────────┐  escaneo/marcación  ┌──────────────┐
-│  MARCA      │──────────────▶│  ATADOS      │◀────────────────────│  SATÉLITE    │
-│  (tenant)   │  órdenes      │  (bultos)    │  recepción única    │  + operarios │
-└─────┬───────┘               └──────────────┘                     └──────┬───────┘
-      │ liquida entregadas                                               │ liquida nómina
-      ▼                                                                  ▼
- order_liquidations                                            payroll_runs (breakdown)
-      └───────────────────────── reportes contables ─────────────────────────┘
+┌─────────────────┐    QR labels     ┌─────────────────┐   escaneo/marcación   ┌─────────────────┐
+│  MARCA /        │─────────────────▶│  ATADOS QR      │◀──────────────────────│  TALLER SATÉLITE│
+│  DISEÑADOR      │   órdenes        │  (bultos)       │   recepción única     │  + OPERARIOS    │
+└────────┬────────┘                  └─────────────────┘                       └────────┬────────┘
+         │ liquida entregadas                                                           │ liquida nómina
+         ▼                                                                              ▼
+order_liquidations                                                            payroll_runs (breakdown)
+         └───────────────────────── reportes contables / Mi Red ─────────────────────────┘
 ```
 
-- **Multi-tenancy**: cada fila de negocio lleva `tenant_id`; la RLS resuelve el tenant del
-  usuario con `current_profile()`. Los satélites **no son tenants**: se vinculan a marcas
-  vía `satellite_links` y acceden a las órdenes asignadas vía `satellite_user_id`.
-- **Integridad en la base, no en la UI**: el tope de destajo es un trigger
-  (`enforce_bundle_cap` con `SELECT … FOR UPDATE`), la recepción única es un
-  `UNIQUE(bundle_id)` y la liquidación única es un `UNIQUE(order_id)`.
-- **Una sola lógica de negocio**: los servicios en `src/lib/services/*` son usados tanto
-  por las Server Actions (UI/PWA) como por la API `/api/v1` — no hay dos implementaciones.
+- **Multi-tenancy:** Cada fila de negocio incluye `tenant_id` aislado mediante RLS. Los satélites se vinculan a las marcas mediante `satellite_links` y acceden a las órdenes asignadas.
+- **Red Neural "Mi Red":**
+  - Ficha interactiva de Satélite con desglose porcentual % de cumplimiento por proceso (Corte, Filete, Plana, Collarín, Presille, Pulido).
+  - Ficha interactiva de Operario (`selectedOperator`) con saldo acumulado de destajo del día/semana e historial cronológico detallado por atado y fecha.
+- **Integridad Transaccional:**
+  - Tope de destajo mediante trigger `enforce_bundle_cap` con `SELECT ... FOR UPDATE`.
+  - Recepción única vía `UNIQUE(bundle_id)`.
+  - Liquidación única por orden vía `UNIQUE(order_id)`.
 
-## 4. Modelo de datos (14 tablas)
+---
 
-| Tabla | Propósito |
-|---|---|
-| `tenants` | Organizaciones de marca |
-| `profiles` | Usuario (1:1 con auth.users): rol, tenant, jefe de taller |
-| `satellite_links` | Vínculo satélite ↔ marca (base del plan Monomarca/Pro) |
-| `satellite_cost_profiles` | Costos fijos mensuales del taller (CFI) |
-| `garments` | Prenda: SAM, precio sugerido, **`size_factors`** (consumo por talla) |
-| `garment_parts` | Despiece (código de pieza, material) |
-| `garment_operations` | Ruta de máquinas con tarifa de destajo por operación |
-| `garment_materials` | Tela e insumos: consumo por prenda (talla base M) y costo unitario |
-| `production_orders` | Orden de corte: satélite asignado, precio acordado, estado |
-| `order_bundles` | Atados unívocos: talla, color, unidades, `bundle_code` |
-| `daily_production_logs` | Marcación de destajo (tope por trigger) |
-| `material_tickets` | Novedades con flujo de estados entre operario/jefe/marca |
-| `satellite_bundle_receipts` | Recepciones QR (una por atado) |
-| `payroll_runs` / `order_liquidations` | Nómina del satélite / pago de la marca |
+## 4. Modelo de Datos (14 Tablas Principales)
 
-**Estados de orden**: `draft → cutting → dispatched → in_progress → completed`
-**Estados de ticket**: `pending_satellite → approved_satellite → in_cutting_room → dispatched → resolved` (o `cancelled`)
+1. `tenants`: Organizaciones de marca y talleres principales.
+2. `profiles`: Usuario (1:1 con `auth.users`), rol (`brand_admin`, `designer`, `cutter`, `satellite_owner`, `operator`), tenant y jefe de taller.
+3. `satellite_links`: Vínculo satélite ↔ marca (base de los planes Monomarca / Pro).
+4. `satellite_cost_profiles`: Costos fijos mensuales del taller (CFI).
+5. `garments`: Prenda: SAM, precio sugerido y `size_factors` (consumo por talla XS a XL).
+6. `garment_parts`: Despiece de tela y moldes.
+7. `garment_operations`: Ruta secuencial de máquinas con tarifas de destajo.
+8. `garment_materials`: Insumos y materiales (consumo base talla M y costo unitario).
+9. `production_orders`: Orden de corte: satélite asignado, precio acordado y estado.
+10. `order_bundles`: Atados unívocos: talla, color, unidades y `bundle_code`.
+11. `daily_production_logs`: Marcación de destajo con registro de operario e historial cronológico.
+12. `material_tickets`: Novedades y faltantes con flujo de estados.
+13. `satellite_bundle_receipts`: Recepciones QR únicas por atado.
+14. `payroll_runs` / `order_liquidations`: Nómina del satélite / Pago por ruta completa de la marca.
 
-## 5. Endpoints de la API v1 (serverless Next.js)
+---
 
-Autenticación por cookies de sesión Supabase (same-origin, la PWA ya la trae).
+## 5. Endpoints de la API v1 (Serverless Next.js)
+
 Contrato uniforme: `{ ok: true, data }` / `{ ok: false, error }`.
-Detalle completo con payloads: **[docs/API.md](API.md)**.
 
 | Método | Ruta | Rol | Función |
 |---|---|---|---|
-| GET | `/api/v1/health` | cualquiera | Health check |
-| POST | `/api/v1/ai/explode-garment` | marca | Imagen → despiece + secuencia de ensamble (IA/fallback) |
-| POST | `/api/v1/satellite/calculate-yield` | satélite | CFI, destajo por máquina, margen y semáforo |
-| POST | `/api/v1/production/log-units` | operario/jefe | Valida tope de bulto y guarda avance |
-| POST | `/api/v1/tickets/report` | operario/jefe | Registro inicial de novedad |
-| PATCH | `/api/v1/tickets/:id/verify` | jefe satélite | Aprobación (`approve`) o descarte (`discard`) |
-| GET | `/api/v1/bundles/:code/sheet` | satélite/operario | Ficha del atado con materiales por talla y unidades |
-| POST | `/api/v1/bundles/receive` | satélite/operario | Recepción QR (idempotente, RPC) |
-| POST | `/api/v1/orders/:id/liquidate` | marca | Liquidación por ruta completa |
+| GET | `/api/v1/health` | Cualquiera | Health check de la API |
+| POST | `/api/v1/ai/explode-garment` | Marca | Imagen → ADN de prenda (despiece + ruta de máquinas + costos) |
+| POST | `/api/v1/satellite/calculate-yield` | Satélite | Calculadora CFI, margen y semáforo de rentabilidad |
+| POST | `/api/v1/production/log-units` | Operario / Jefe | Marcación de destajo con validación de tope |
+| POST | `/api/v1/tickets/report` | Operario / Jefe | Registro de novedad con nomenclatura unívoqua |
+| PATCH | `/api/v1/tickets/:id/verify` | Jefe Satélite / Marca | Aprobación o despacho de reposición |
+| GET | `/api/v1/bundles/:code/sheet` | Satélite / Operario | Ficha del atado con consumos recalculados por talla |
+| POST | `/api/v1/bundles/receive` | Satélite / Operario | Recepción de atado por QR (idempotente) |
+| POST | `/api/v1/orders/:id/liquidate` | Marca | Liquidación por ruta completa terminada |
 
-## 6. Seguridad
+---
 
-- **RLS en todas las tablas** (migraciones 0003, 0007, 0009, 0010): el anon key es
-  público por diseño; la barrera real son las políticas.
-- **Anti-escalada de privilegios** (0009): un perfil solo define su rol/vínculo durante
-  el onboarding (siendo `operator`); nadie puede auto-promoverse a `brand_admin` de otra marca.
-- **Tope de atado con lock** (`FOR UPDATE`): seguro ante marcación concurrente de varios operarios.
-- **Liquidación atómica**: `UNIQUE(order_id)` + re-chequeo en servicio → imposible el doble pago.
-- La API v1 comparte el mismo usuario de sesión y la misma RLS: no existen credenciales de servicio en el cliente.
+## 6. Seguridad y Resiliencia
 
-## 7. Decisiones de diseño clave
+- **RLS en todas las tablas:** Políticas de seguridad a nivel de fila activas en Supabase.
+- **Anti-escalada de privilegios:** Rol asignado en onboarding sin posibilidad de alteración por cliente.
+- **Lock de Concurrencia (`FOR UPDATE`):** Protección estricta en DB para marcaciones simultáneas de operarios sobre el mismo atado.
+- **Resiliencia Visual Base64:** Los logotipos oficiales están embebidos en Base64 en el cliente, garantizando 0 fallas de carga por caché o red.
 
-1. **Consumo por talla**: `garments.size_factors` (JSON por prenda) multiplica el consumo
-   base (talla M). El escáner calcula la tela total del atado: consumo × factor × unidades.
-2. **Entregada = ruta completa**: una prenda cuenta como entregada solo cuando **todas**
-   las operaciones del atado llegan al tope; la liquidación paga exactamente eso.
-3. **Snapshot `satellite_name`** en liquidaciones: los reportes sobreviven a desvinculaciones.
-4. **IA con degradación elegante**: sin `GEMINI_API_KEY`, el ADN se genera con blueprints
-   heurísticos locales (`src/lib/ai.ts`) y la app sigue funcionando.
-5. **PWA primero**: la operación de planta (escanear, marcar) es táctil e instalable;
-   el endpoint de escáner y marcación reutilizan los mismos servicios que la API.
-
-## 8. Roadmap sugerido
-
-- **Corto plazo (piloto)**: reprocesos de tickets (`in_cutting_room → resolved`), notificaciones WhatsApp, reporte de tela consumida por orden.
-- **Mediano plazo**: Storage de Supabase para evidencias fotográficas, tarifas de destajo por talla, app de contador (CSV/PDF de reportes).
-- **Largo plazo**: marketplace de capacidad (marcas publican cortes, satélites ofertan), facturación de planes integrada, modo offline de marcación con cola.
+---
+*CoreTextil SaaS · Blueprint Técnico v2.0 (Colombia y Latinoamérica).*
