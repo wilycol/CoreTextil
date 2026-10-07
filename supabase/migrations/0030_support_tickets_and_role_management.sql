@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.support_tickets (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     page_url TEXT,
+    attachment_url TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_review', 'resolved', 'closed')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

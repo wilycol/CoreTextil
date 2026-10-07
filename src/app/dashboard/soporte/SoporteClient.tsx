@@ -13,6 +13,7 @@ type Ticket = {
   title: string;
   description: string;
   page_url?: string;
+  attachment_url?: string;
   status: "open" | "in_review" | "resolved" | "closed";
   created_at: string;
 };
@@ -33,11 +34,23 @@ export default function SoporteClient({
   const [severity, setSeverity] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const isSuperAdmin = userRole === "superadmin";
+
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,12 +69,14 @@ export default function SoporteClient({
         type,
         severity,
         pageUrl,
+        attachmentUrl: imagePreview || undefined,
       });
 
       if (res.ok) {
-        setMessage("✅ Tu reporte fue enviado exitosamente al equipo de soporte de CoreTextil.");
+        setMessage("✅ Tu reporte fue enviado exitosamente con captura de pantalla al equipo de soporte.");
         setTitle("");
         setDescription("");
+        setImagePreview(null);
         // Agregar provisionalmente a la lista local
         const newTicket: Ticket = {
           id: Date.now().toString(),
@@ -73,6 +88,7 @@ export default function SoporteClient({
           title,
           description,
           page_url: pageUrl,
+          attachment_url: imagePreview || undefined,
           status: "open",
           created_at: new Date().toISOString(),
         };
@@ -196,6 +212,31 @@ export default function SoporteClient({
             />
           </div>
 
+          {/* Adjuntar captura de pantalla opcional */}
+          <div className="flex items-center gap-4 pt-1">
+            <label className="cursor-pointer rounded-xl border border-cyan-500/40 bg-cyan-950/40 px-4 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-900 flex items-center gap-1.5">
+              📷 {imagePreview ? "Cambiar captura de pantalla" : "Adjuntar captura de pantalla / foto (Opcional)"}
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            </label>
+
+            {imagePreview && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={imagePreview}
+                  alt="Captura adjunta"
+                  className="h-10 w-10 rounded-lg object-cover border border-cyan-500/50 shadow-md"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImagePreview(null)}
+                  className="text-xs text-red-400 hover:underline"
+                >
+                  Quitar foto
+                </button>
+              </div>
+            )}
+          </div>
+
           {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
           {message && <p className="text-xs font-semibold text-emerald-400">{message}</p>}
 
@@ -227,7 +268,7 @@ export default function SoporteClient({
             {tickets.map((t) => (
               <div
                 key={t.id}
-                className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-xs space-y-2"
+                className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-xs space-y-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -276,7 +317,20 @@ export default function SoporteClient({
 
                 <p className="text-slate-300 leading-relaxed">{t.description}</p>
 
-                <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-900">
+                {t.attachment_url && (
+                  <div className="pt-1">
+                    <p className="text-[11px] font-medium text-cyan-400 mb-1">📷 Captura de pantalla adjunta:</p>
+                    <a href={t.attachment_url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={t.attachment_url}
+                        alt="Captura de pantalla de la falla"
+                        className="max-h-48 rounded-lg border border-slate-700 object-cover hover:opacity-90 transition"
+                      />
+                    </a>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-900">
                   <span>
                     Por: {t.user_name} ({t.user_email}) · {new Date(t.created_at).toLocaleString()}
                   </span>

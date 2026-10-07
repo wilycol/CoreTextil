@@ -8,6 +8,7 @@ export type TicketInput = {
   type: "bug" | "feature_request" | "improvement" | "question";
   severity?: "low" | "medium" | "high" | "critical";
   pageUrl?: string;
+  attachmentUrl?: string;
 };
 
 export async function createSupportTicket(input: TicketInput) {
@@ -34,6 +35,7 @@ export async function createSupportTicket(input: TicketInput) {
     title: input.title.trim(),
     description: input.description.trim(),
     page_url: input.pageUrl || null,
+    attachment_url: input.attachmentUrl || null,
     status: "open",
   });
 
