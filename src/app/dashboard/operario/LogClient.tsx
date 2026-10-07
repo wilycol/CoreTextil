@@ -286,20 +286,40 @@ export default function LogClient({
 
 {/* Componente del Cuaderno Digital de Trabajo Personal para Operarios libres */}
 function PersonalLogbook() {
-  const [prenda, setPrenda] = useState("Jean de Dama");
-  const [operacion, setOperacion] = useState("Fileteadora");
+  const [workType, setWorkType] = useState<"process" | "full">("process");
+  const [prenda, setPrenda] = useState("Jean Dama");
+  const [color, setColor] = useState("Azul Oscuro");
+  const [operacion, setOperacion] = useState("Filete (Cerrar costados)");
+  const [customOp, setCustomOp] = useState("");
   const [tarifa, setTarifa] = useState("600");
   const [customQty, setCustomQty] = useState("10");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Lista de procesos sugeridos + autocompletables
+  const [processOptions, setProcessOptions] = useState<string[]>([
+    "Filete (Cerrar costados)",
+    "Plana (Poner cuellos)",
+    "Collarín (Dobladillo / Ruedo)",
+    "Presille (Refuerzos)",
+    "Pegar mangas",
+    "Pegar resorte / Pretina",
+    "Pegar bolsillos",
+    "Ensamblado de Prenda Completa",
+  ]);
 
   const [logs, setLogs] = useState<
     {
       id: string;
+      workType: "process" | "full";
       prenda: string;
+      color: string;
       operacion: string;
       tarifa: number;
       units: number;
       total: number;
-      date: string;
+      formattedDate: string; // ej: Lunes, 15 Oct 2026 · 10:30 AM
+      rawDate: string; // YYYY-MM-DD
+      image?: string | null;
     }[]
   >(() => {
     if (typeof window !== "undefined") {
@@ -314,23 +334,60 @@ function PersonalLogbook() {
   });
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayLogs = logs.filter((l) => l.date === todayStr);
+  const todayLogs = logs.filter((l) => l.rawDate === todayStr);
 
   const walletToday = todayLogs.reduce((acc, l) => acc + l.total, 0);
   const piecesToday = todayLogs.reduce((acc, l) => acc + l.units, 0);
+
+  // Captura de foto opcional
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   function addLog(units: number) {
     const rate = parseFloat(tarifa) || 0;
     if (units <= 0 || rate <= 0) return;
 
+    // Determinar proceso activo
+    let selectedProc = operacion === "OTRO" ? customOp.trim() : operacion;
+    if (!selectedProc) selectedProc = "Ensamblado General";
+
+    // Si es un nuevo proceso personalizado, añadir a la lista de opciones futuras
+    if (customOp.trim() && !processOptions.includes(customOp.trim())) {
+      setProcessOptions((prev) => [...prev, customOp.trim()]);
+    }
+
+    const now = new Date();
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const dayName = days[now.getDay()];
+    const dateNum = now.getDate();
+    const monthName = months[now.getMonth()];
+    const year = now.getFullYear();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+
+    const formattedDate = `${dayName} ${dateNum} de ${monthName} ${year} · ${hours}:${minutes}`;
+
     const newLog = {
       id: Date.now().toString(),
+      workType,
       prenda: prenda || "Prenda General",
-      operacion: operacion || "Ensamblado",
+      color: color || "Estándar",
+      operacion: selectedProc,
       tarifa: rate,
       units,
       total: rate * units,
-      date: todayStr,
+      formattedDate,
+      rawDate: todayStr,
+      image: imagePreview,
     };
 
     const updated = [newLog, ...logs];
@@ -338,6 +395,8 @@ function PersonalLogbook() {
     if (typeof window !== "undefined") {
       localStorage.setItem("coretextil_personal_logs", JSON.stringify(updated));
     }
+    setImagePreview(null);
+    if (operacion === "OTRO") setCustomOp("");
   }
 
   function clearLogs() {
@@ -353,6 +412,7 @@ function PersonalLogbook() {
 
   return (
     <div className="space-y-6">
+      {/* Cabecera Billetera Personal */}
       <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-5 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -367,7 +427,7 @@ function PersonalLogbook() {
             href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
+            className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
           >
             📲 Invitar a mi taller satélite
           </a>
@@ -391,11 +451,31 @@ function PersonalLogbook() {
 
       {/* Formulario de registro rápido personal */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-        <h3 className="font-bold text-slate-200">Anotar Producción en mi Cuaderno</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-slate-200">Anotar Producción en mi Cuaderno</h3>
+          <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+            <button
+              onClick={() => setWorkType("process")}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                workType === "process" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              ⚙️ Por Proceso / Pieza
+            </button>
+            <button
+              onClick={() => setWorkType("full")}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                workType === "full" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              👕 Prenda Completa
+            </button>
+          </div>
+        </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Prenda / Ref</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Prenda / Referencia</label>
             <input
               type="text"
               value={prenda}
@@ -406,14 +486,39 @@ function PersonalLogbook() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Operación / Máquina</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Color de Prenda</label>
             <input
               type="text"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
+              placeholder="Ej: Azul Oscuro, Negro"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Operación / Proceso</label>
+            <select
               value={operacion}
               onChange={(e) => setOperacion(e.target.value)}
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-              placeholder="Ej: Fileteadora"
-            />
+            >
+              {processOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+              <option value="OTRO">✏️ Otro proceso (Personalizado)...</option>
+            </select>
+            {operacion === "OTRO" && (
+              <input
+                type="text"
+                value={customOp}
+                onChange={(e) => setCustomOp(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-cyan-500/50 bg-slate-950 px-3 py-1.5 text-xs text-slate-100"
+                placeholder="Escribe el nombre del proceso..."
+              />
+            )}
           </div>
 
           <div>
@@ -428,11 +533,27 @@ function PersonalLogbook() {
           </div>
         </div>
 
+        {/* Foto de referencia opcional */}
+        <div className="flex items-center gap-4 pt-1">
+          <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-500">
+            📷 {imagePreview ? "Cambiar foto de referencia" : "Adjuntar foto opcional"}
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </label>
+          {imagePreview && (
+            <div className="flex items-center gap-2">
+              <img src={imagePreview} alt="Preview" className="h-8 w-8 rounded-lg object-cover border border-slate-700" />
+              <button onClick={() => setImagePreview(null)} className="text-xs text-red-400 hover:underline">
+                Quitar
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Botones de marcación rápida */}
         <div className="pt-2">
           <p className="text-xs text-slate-400 mb-2">Sumar Piezas a mi Billetera Personal:</p>
           <div className="flex flex-wrap items-center gap-3">
-            {[10, 25, 50].map((qty) => (
+            {[10, 25, 50, 100].map((qty) => (
               <button
                 key={qty}
                 onClick={() => addLog(qty)}
@@ -463,13 +584,13 @@ function PersonalLogbook() {
       {/* Historial de mi Cuaderno */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-slate-200">Historial de mi Cuaderno</h3>
+          <h3 className="font-bold text-slate-200">Historial de mi Cuaderno Personal</h3>
           {logs.length > 0 && (
             <button
               onClick={clearLogs}
               className="text-xs text-slate-500 hover:text-red-400 transition"
             >
-              Limpiar notas
+              Limpiar cuaderno
             </button>
           )}
         </div>
@@ -479,18 +600,25 @@ function PersonalLogbook() {
             Tu cuaderno está limpio. Añade tus primeras piezas producidas arriba.
           </p>
         ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2.5 max-h-80 overflow-y-auto">
             {logs.map((l) => (
               <div
                 key={l.id}
-                className="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-950/60 px-4 py-2.5 text-xs"
+                className="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 text-xs gap-3"
               >
-                <div>
-                  <p className="font-semibold text-slate-200">{l.prenda} · {l.operacion}</p>
-                  <p className="text-slate-500">{l.date} · Tarifa: {formatCop(l.tarifa)}</p>
+                <div className="flex items-center gap-3">
+                  {l.image && (
+                    <img src={l.image} alt={l.prenda} className="h-10 w-10 rounded-lg object-cover border border-slate-800" />
+                  )}
+                  <div>
+                    <p className="font-semibold text-slate-200">
+                      {l.prenda} ({l.color}) · <span className="text-cyan-300">{l.operacion}</span>
+                    </p>
+                    <p className="text-slate-500 text-[11px]">{l.formattedDate} · Tarifa: {formatCop(l.tarifa)}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-extrabold text-emerald-400">+{formatCop(l.total)}</p>
+                  <p className="font-extrabold text-emerald-400 text-sm">+{formatCop(l.total)}</p>
                   <p className="text-slate-400 font-medium">{l.units} piezas</p>
                 </div>
               </div>
