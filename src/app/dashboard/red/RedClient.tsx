@@ -362,7 +362,7 @@ export default function RedClient({
       <div className="space-y-10">
         {/* VISTA CONTENEDOR 1: MARCAS CLIENTES AFILIADAS (MI RED DE TALLER) */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
             <div>
               <h2 className="text-lg font-bold text-cyan-400 flex items-center gap-2">
                 <span>🏷️</span> Marcas y Diseñadores Afiliados (Mi Red Clientelar)
@@ -371,9 +371,21 @@ export default function RedClient({
                 Marcas textiles que han vinculado a tu taller para asignarte órdenes de corte y ensamble.
               </p>
             </div>
-            <span className="rounded-full bg-cyan-950/80 px-3 py-1 font-mono text-xs font-bold text-cyan-300 border border-cyan-800/40">
-              {brandNetwork.length} {brandNetwork.length === 1 ? "Marca" : "Marcas"}
-            </span>
+            <div className="flex items-center gap-3">
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                  "Hola, desde nuestro Taller Satélite estamos usando CoreTextil para gestionar órdenes de confección, atados con QR y trazabilidad en vivo. Le invitamos a registrar su marca GRATIS por 60 días para enviarnos sus cortes con etiquetas QR automáticas y ver el avance de sus lotes desde su celular: https://coretextil.vercel.app"
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-950/40 transition hover:bg-cyan-500"
+              >
+                📲 Invitar Marca por WhatsApp
+              </a>
+              <span className="rounded-full bg-cyan-950/80 px-3 py-1 font-mono text-xs font-bold text-cyan-300 border border-cyan-800/40">
+                {brandNetwork.length} {brandNetwork.length === 1 ? "Marca" : "Marcas"}
+              </span>
+            </div>
           </div>
 
           {brandNetwork.length === 0 ? (
