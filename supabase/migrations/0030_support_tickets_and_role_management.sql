@@ -29,7 +29,7 @@ CREATE POLICY "Usuarios leen sus propios tickets"
 ON public.support_tickets FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id OR EXISTS (
-    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin'
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role::text = 'superadmin'
 ));
 
 CREATE POLICY "Usuarios insertan tickets"
@@ -41,7 +41,7 @@ CREATE POLICY "SuperAdmins actualizan tickets"
 ON public.support_tickets FOR UPDATE
 TO authenticated
 USING (EXISTS (
-    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin'
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role::text = 'superadmin'
 ));
 
 -- 3. Tabla de Feedbacks de Salida (Offboarding)
@@ -66,5 +66,5 @@ CREATE POLICY "SuperAdmins leen exit_feedbacks"
 ON public.exit_feedbacks FOR SELECT
 TO authenticated
 USING (EXISTS (
-    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin'
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role::text = 'superadmin'
 ));
