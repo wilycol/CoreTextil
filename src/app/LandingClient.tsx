@@ -289,36 +289,61 @@ export default function LandingClient() {
       {/* Sección: Módulos Estrella & Innovación */}
       <section className="relative z-10 border-t border-slate-900 bg-slate-900/30 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+              Módulos de Alto Rendimiento
+            </span>
+            <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">
+              Control total, <span className="text-cyan-400">Marketplace</span> y Resguardo Contable
+            </h2>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+              <div className="text-2xl">🤝</div>
+              <h4 className="mt-3 font-bold text-slate-100">Marketplace de Talento & Capacidad</h4>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Conecta talleres satélites con capacidad ociosa e integra a operarios en búsqueda de trabajo para absorber cargas de producción al instante.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+              <div className="text-2xl">📊</div>
+              <h4 className="mt-3 font-bold text-slate-100">Resúmenes Contables (Soporte DIAN)</h4>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Transforma las liquidaciones de destajo e insumos en informes contables digitales verificables, sirviendo como soporte de costos deducibles ante entes fiscales.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+              <div className="text-2xl">📈</div>
+              <h4 className="mt-3 font-bold text-slate-100">Métricas & Cuellos de Botella</h4>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Identifica qué máquina o proceso está frenando el lote y mide la capacidad real de tu taller para saber cuándo invertir en nuevos recursos.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
               <div className="text-2xl">📱</div>
               <h4 className="mt-3 font-bold text-slate-100">App Móvil PWA & Android</h4>
               <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Instalable en celulares Android sin necesidad de equipos de cómputo en la planta de confección.
+                Instalable en celulares Android con escáner QR integrado sin requerir computadores en la planta de confección.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
               <div className="text-2xl">🏷️</div>
-              <h4 className="mt-3 font-bold text-slate-100">Tickets de Faltantes</h4>
+              <h4 className="mt-3 font-bold text-slate-100">Tickets de Faltantes Unívoquos</h4>
               <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Nomenclatura unívoca para reposición inmediata de faltantes sin detener las líneas de costura.
+                Nomenclatura unívoca para reposición inmediata de piezas defectuosas o faltantes sin detener las líneas de costura.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
               <div className="text-2xl">🧮</div>
-              <h4 className="mt-3 font-bold text-slate-100">Simulador de Costos CFI</h4>
+              <h4 className="mt-3 font-bold text-slate-100">Simulador CFI & Liquidación a 1 Clic</h4>
               <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Calculadora de costo fijo unitario para satélites. Conoce exactamente tu margen antes de iniciar un lote.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-              <div className="text-2xl">⚡</div>
-              <h4 className="mt-3 font-bold text-slate-100">Liquidación a 1 Clic</h4>
-              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Calcula la nómina por destajo semanal o quincenal en un instante, eliminado errores de cuentas manuales.
+                Conoce tu costo fijo unitario antes de iniciar un lote y liquida la nómina por destajo en segundos con comprobantes unívoquos.
               </p>
             </div>
           </div>

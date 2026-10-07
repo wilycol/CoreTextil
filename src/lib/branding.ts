@@ -20,7 +20,8 @@ export const BRAND_PLANS: Plan[] = [
     features: [
       "Acceso total por 60 días",
       "2 a 3 ciclos completos de corte",
-      "ADN de prenda y órdenes de corte",
+      "ADN de prenda con IA y órdenes de corte",
+      "Acceso a la bolsa de satélites en Mi Red",
     ],
   },
   {
@@ -30,7 +31,12 @@ export const BRAND_PLANS: Plan[] = [
     priceLabel: "$120.000",
     period: "COP / mes",
     audience: "Marcas en crecimiento",
-    features: ["Hasta 3 satélites conectados", "Órdenes y atados ilimitados"],
+    features: [
+      "Hasta 3 satélites conectados",
+      "Órdenes y atados QR ilimitados",
+      "Resumen contable básico de liquidaciones",
+      "Marketplace de satélites disponibles",
+    ],
   },
   {
     id: "pro",
@@ -41,9 +47,11 @@ export const BRAND_PLANS: Plan[] = [
     audience: "Marcas consolidadas",
     highlight: true,
     features: [
-      "Hasta 10 satélites",
-      "ADN con IA ilimitado",
-      "Telemetría en vivo",
+      "Hasta 10 satélites conectados",
+      "ADN con IA (Vision Engine V2) ilimitado",
+      "Métricas de telemetría y cuellos de botella",
+      "Soporte contable para deducibilidad fiscal DIAN",
+      "Prioridad en el Marketplace de Satélites",
     ],
   },
   {
@@ -53,7 +61,12 @@ export const BRAND_PLANS: Plan[] = [
     priceLabel: "$550.000",
     period: "COP / mes",
     audience: "Plantas de producción",
-    features: ["Satélites ilimitados", "Reportes contables"],
+    features: [
+      "Satélites e hilos de producción ilimitados",
+      "Informes contables avanzados y exportación fiscal",
+      "Análisis predictivo de capacidad instalada",
+      "Soporte técnico dedicado 24/7",
+    ],
   },
 ];
 
@@ -66,8 +79,10 @@ export const SATELLITE_PLANS: Plan[] = [
     period: "Gratis para siempre",
     audience: "Un solo taller satélite",
     features: [
-      "Trabaja con una sola marca en la plataforma",
-      "Liquidación de operarios a un clic",
+      "Trabaja con 1 marca en la plataforma",
+      "Escáner QR y Billetera de operarios",
+      "Simulador de costos fijos (CFI)",
+      "Registro en el Marketplace de Talento",
     ],
   },
   {
@@ -79,9 +94,11 @@ export const SATELLITE_PLANS: Plan[] = [
     audience: "Talleres multi-marca",
     highlight: true,
     features: [
-      "2 o más marcas simultáneas",
-      "Liquidación unificada de operarios",
-      "Control global del taller",
+      "Marcas ilimitadas simultáneas",
+      "Liquidación unificada de nómina a 1 clic",
+      "Métricas de rendimiento por operario y proceso",
+      "Exportación de comprobantes contables de destajo",
+      "Publicación de capacidad ociosa en el Marketplace",
     ],
   },
 ];
