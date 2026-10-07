@@ -24,10 +24,14 @@ export default async function ReportsPage() {
   const { profile } = await getSession();
   const supabase = await createClient();
 
-  if (!["brand_admin", "designer", "cutter"].includes(profile.role) || !profile.tenant_id) {
+  const isBrand = ["brand_admin", "designer", "cutter"].includes(profile.role);
+  const isSatellite = profile.role === "satellite_owner";
+  const isSuperAdmin = profile.role === "superadmin";
+
+  if (!isBrand && !isSatellite && !isSuperAdmin) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
-        Los reportes contables son para marcas y diseñadores.
+        Los reportes contables consolidados están disponibles para Marcas, Satélites y Administradores.
       </p>
     );
   }
@@ -44,19 +48,32 @@ export default async function ReportsPage() {
   }
   const firstMonthStart = `${months[0].key}-01`;
 
-  // Liquidaciones de mi marca en la ventana
-  const { data: liquidations } = await supabase
-    .from("order_liquidations")
-    .select("total_cop, units_delivered, satellite_name, created_at")
-    .eq("tenant_id", profile.tenant_id)
-    .gte("created_at", firstMonthStart);
+  // Consulta adaptable según rol
+  let liquidations: any[] = [];
+  let tickets: any[] = [];
 
-  // Tickets resueltos en la ventana
-  const { data: tickets } = await supabase
-    .from("material_tickets")
-    .select("status, created_at")
-    .eq("tenant_id", profile.tenant_id)
-    .gte("created_at", firstMonthStart);
+  if (isSuperAdmin) {
+    const [{ data: liqData }, { data: tktData }] = await Promise.all([
+      supabase.from("order_liquidations").select("*").gte("created_at", firstMonthStart),
+      supabase.from("material_tickets").select("*").gte("created_at", firstMonthStart),
+    ]);
+    liquidations = liqData || [];
+    tickets = tktData || [];
+  } else if (isBrand && profile.tenant_id) {
+    const [{ data: liqData }, { data: tktData }] = await Promise.all([
+      supabase.from("order_liquidations").select("*").eq("tenant_id", profile.tenant_id).gte("created_at", firstMonthStart),
+      supabase.from("material_tickets").select("*").eq("tenant_id", profile.tenant_id).gte("created_at", firstMonthStart),
+    ]);
+    liquidations = liqData || [];
+    tickets = tktData || [];
+  } else if (isSatellite) {
+    const [{ data: liqData }, { data: tktData }] = await Promise.all([
+      supabase.from("order_liquidations").select("*").eq("satellite_user_id", profile.id).gte("created_at", firstMonthStart),
+      supabase.from("material_tickets").select("*").eq("satellite_approver_id", profile.id).gte("created_at", firstMonthStart),
+    ]);
+    liquidations = liqData || [];
+    tickets = tktData || [];
+  }
 
   const byMonth = new Map<string, MonthRow>();
   for (const m of months) {

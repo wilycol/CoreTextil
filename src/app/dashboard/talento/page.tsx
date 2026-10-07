@@ -17,7 +17,7 @@ export default async function TalentoPage() {
   const { profile } = await getSession();
   const supabase = await createClient();
 
-  if (profile.role !== "satellite_owner") {
+  if (!["satellite_owner", "brand_admin", "superadmin"].includes(profile.role)) {
     redirect("/dashboard");
   }
 

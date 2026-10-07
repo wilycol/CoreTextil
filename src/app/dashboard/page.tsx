@@ -139,15 +139,43 @@ const SUPERADMIN_CARDS: Card[] = [
   {
     href: "/dashboard/soporte",
     title: "👑 Mesa de Control SuperAdmin",
-    text: "Administra los tickets de soporte recibidos, responde sugerencias y supervisa el feedback del piloto.",
+    text: "Administra tickets de soporte, responde sugerencias, revisa capturas de pantalla y analiza feedback del piloto.",
+  },
+  {
+    href: "/dashboard/reportes",
+    title: "📊 Consola de Reportes Contables Globales",
+    text: "Inspecciona el consolidado de liquidaciones, prendas entregadas y métricas financieras de la plataforma.",
+  },
+  {
+    href: "/dashboard/guias/vision-engine",
+    title: "👁️ Guía Vision Engine V2 (Fotos IA)",
+    text: "Genera las 5 fotos calibradas px → cm con el fotógrafo IA industrial de CoreTextil.",
+  },
+  {
+    href: "/dashboard/prendas",
+    title: "📋 Fichas Técnicas Globales",
+    text: "Acceso al catálogo maestro de prendas, despieces, rutas de máquinas y tiempos SAM.",
+  },
+  {
+    href: "/dashboard/ordenes",
+    title: "✂️ Órdenes de Corte y Atados",
+    text: "Supervisa las órdenes emitidas, atados con códigos QR y matriz de tendido.",
+  },
+  {
+    href: "/dashboard/satelite",
+    title: "🏭 Simulador CFI y Costos Satélites",
+    text: "Calculadora de costos fijos por hora máquina y simulación de punto de equilibrio.",
+  },
+  {
+    href: "/dashboard/talento",
+    title: "🧵 Bolsa de Operarios y Maquila",
+    text: "Explora la red de operarios libres por máquina, especialidad y disponibilidad en Cúcuta/LATAM.",
   },
   {
     href: "/dashboard/perfil",
-    title: "⚙️ Ajustes de Cuenta",
-    text: "Administra tu cuenta administrativa y respalda datos del sistema.",
+    title: "⚙️ Ajustes de Cuenta SuperAdmin",
+    text: "Exportación de datos en JSON, reinicio de rol y configuración administrativa.",
   },
-  ...BRAND_CARDS.slice(0, 4),
-  ...SATELLITE_CARDS.slice(0, 4),
 ];
 
 export default async function DashboardPage() {

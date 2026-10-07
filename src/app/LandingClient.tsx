@@ -9,6 +9,8 @@ const PROMPT_MASTER_TEXT = `Actúa como Diseñador Técnico Textil y Patronista 
 
 export default function LandingClient() {
   const [copied, setCopied] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slides = Array.from({ length: 12 }, (_, i) => `/pitch_deck/slide_${i + 1}.png`);
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(PROMPT_MASTER_TEXT);
@@ -40,7 +42,7 @@ export default function LandingClient() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20 pt-12 text-center">
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-12 pt-12 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-4 py-1.5 text-xs font-semibold text-cyan-300 backdrop-blur">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
@@ -69,11 +71,93 @@ export default function LandingClient() {
             Empezar gratis
           </Link>
           <a
-            href="#paso-a-paso"
+            href="#video-oficial"
             className="rounded-xl border border-slate-700 bg-slate-900/60 px-7 py-3.5 text-base font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-500/50 hover:bg-slate-800"
           >
-            Ver cómo funciona
+            🎥 Ver Video Demo
           </a>
+        </div>
+      </section>
+
+      {/* Sección Video Documental IA */}
+      <section id="video-oficial" className="relative z-10 mx-auto max-w-5xl px-6 py-8">
+        <div className="rounded-3xl border border-cyan-500/30 bg-slate-900/80 p-6 sm:p-8 shadow-2xl backdrop-blur space-y-6">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 inline-block px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30">
+              🎥 Video Oficial · Análisis Audiovisual IA (Notebook LM)
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-100">
+              CoreTextil: Conectando la Industria Confeccionista en LATAM
+            </h2>
+            <p className="mx-auto max-w-2xl text-xs sm:text-sm text-slate-400">
+              Mira cómo el ecosistema neural elimina la fricción operativa entre marcas, talleres satélites y operarios a destajo.
+            </p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+            <video
+              controls
+              className="w-full aspect-video rounded-2xl object-cover"
+              poster="/logo.png"
+            >
+              <source src="/media/CoreTextil__Conectando_LATAM.mp4" type="video/mp4" />
+              Tu navegador no soporta la reproducción de video HTML5.
+            </video>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección Pitch Deck V2 Presentation */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 py-8">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                📊 Presentación Ejecutiva · Ecosistema Neural V2
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-100 mt-1">
+                Pitch Deck Oficial de CoreTextil
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveSlide((prev) => (prev > 0 ? prev - 1 : slides.length - 1))}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-bold text-slate-200 hover:border-cyan-500 transition"
+              >
+                ← Anterior
+              </button>
+              <span className="text-xs font-semibold text-cyan-300 px-2">
+                Diapositiva {activeSlide + 1} de {slides.length}
+              </span>
+              <button
+                onClick={() => setActiveSlide((prev) => (prev < slides.length - 1 ? prev + 1 : 0))}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-bold text-slate-200 hover:border-cyan-500 transition"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl flex items-center justify-center bg-black min-h-[300px]">
+            <img
+              src={slides[activeSlide]}
+              alt={`Slide ${activeSlide + 1}`}
+              className="w-full aspect-[16/9] object-contain"
+            />
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveSlide(idx)}
+                className={`h-2.5 rounded-full transition-all ${
+                  activeSlide === idx ? "w-8 bg-cyan-400" : "w-2.5 bg-slate-700 hover:bg-slate-500"
+                }`}
+                aria-label={`Ir a diapositiva ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 

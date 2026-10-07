@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FreeOperator } from "./page";
 
 export default function TalentoClient({ operators }: { operators: FreeOperator[] }) {
+  const [activeTab, setActiveTab] = useState<"operators" | "satellites" | "brands">("operators");
   const [search, setSearch] = useState("");
 
   const filtered = operators.filter((op) => {
@@ -16,13 +17,55 @@ export default function TalentoClient({ operators }: { operators: FreeOperator[]
 
   return (
     <div className="space-y-6">
-      <input
-        type="text"
-        placeholder="Buscar por nombre, especialidad (ej. Jean) o máquina..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-slate-100 outline-none focus:border-cyan-500"
-      />
+      {/* Selector de Categorías de la Bolsa de Empleo y Maquila */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+        <button
+          onClick={() => setActiveTab("operators")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+            activeTab === "operators"
+              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-950/50"
+              : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
+          }`}
+        >
+          🧵 Operarios Libres ({operators.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("satellites")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+            activeTab === "satellites"
+              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-950/50"
+              : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
+          }`}
+        >
+          🏭 Talleres Satélites Buscando Marcas
+          <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            Próximamente
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("brands")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+            activeTab === "brands"
+              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-950/50"
+              : "bg-slate-900 text-slate-400 border border-slate-800 hover:text-white"
+          }`}
+        >
+          🏷️ Marcas Buscando Capacidad de Maquila
+          <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            Próximamente
+          </span>
+        </button>
+      </div>
+
+      {activeTab === "operators" ? (
+        <>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, especialidad (ej. Jean) o máquina..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-xs text-slate-100 outline-none focus:border-cyan-500"
+          />
 
       {filtered.length === 0 ? (
         <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center text-slate-400">
@@ -89,6 +132,30 @@ export default function TalentoClient({ operators }: { operators: FreeOperator[]
               </div>
             );
           })}
+        </div>
+      )}
+        </>
+      ) : activeTab === "satellites" ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-8 text-center space-y-3">
+          <span className="text-3xl">🏭</span>
+          <h3 className="text-lg font-bold text-amber-300">Marketplace de Talleres Satélites Buscando Marcas</h3>
+          <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+            Esta sección permitirá a los Talleres Satélites publicar su capacidad de producción disponible (ej: 500 prendas/semana) para que Marcas y Diseñadores los contraten directamente.
+          </p>
+          <span className="inline-block px-3 py-1 text-xs font-bold text-amber-400 bg-amber-950 rounded-full border border-amber-500/40">
+            🚧 En desarrollo para la Fase 2 del Piloto
+          </span>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-8 text-center space-y-3">
+          <span className="text-3xl">🏷️</span>
+          <h3 className="text-lg font-bold text-cyan-300">Bolsa de Requerimientos de Marcas</h3>
+          <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+            Las Marcas y Diseñadores podrán publicar ofertas de producción especificando el tipo de prenda (Jeans, Polo, Deportivo) para que los Talleres Satélites postulen sus propuestas.
+          </p>
+          <span className="inline-block px-3 py-1 text-xs font-bold text-cyan-400 bg-cyan-950 rounded-full border border-cyan-500/40">
+            🚧 En desarrollo para la Fase 2 del Piloto
+          </span>
         </div>
       )}
     </div>
