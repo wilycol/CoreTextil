@@ -12,6 +12,7 @@ export default function LandingClient() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRotated, setIsRotated] = useState(false);
 
   const slides = Array.from({ length: 12 }, (_, i) => `/pitch_deck/slide_${i + 1}.png`);
 
@@ -52,10 +53,18 @@ export default function LandingClient() {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
+      // Intenta bloquear la orientación en horizontal (Landscape) en móviles compatibles
+      if (typeof screen !== "undefined" && screen.orientation && "lock" in screen.orientation) {
+        (screen.orientation as any).lock("landscape").catch(() => {});
+      }
     } else {
       setIsFullscreen(false);
+      setIsRotated(false);
       if (document.fullscreenElement && document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
+      }
+      if (typeof screen !== "undefined" && screen.orientation && "unlock" in screen.orientation) {
+        screen.orientation.unlock();
       }
     }
   };
@@ -234,50 +243,66 @@ export default function LandingClient() {
 
       {/* Modal Pantalla Completa (Full Screen Presentation Overlay) */}
       {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-8 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-8 animate-in fade-in duration-200">
           {/* Top Bar Controls */}
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-3 py-1 rounded-full">
-                Pitch Deck Oficial V2
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-2.5 py-1 rounded-full">
+                Pitch Deck V2
               </span>
-              <span className="text-sm font-semibold text-slate-300 hidden sm:inline">
+              <span className="text-xs sm:text-sm font-semibold text-slate-300">
                 Diapositiva {activeSlide + 1} de {slides.length}
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setIsRotated(!isRotated)}
+                className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+                  isRotated
+                    ? "border-cyan-500 bg-cyan-950 text-cyan-300"
+                    : "border-slate-700 bg-slate-900 text-slate-300 hover:border-cyan-500"
+                }`}
+                title="Girar diapositiva a horizontal si tu teléfono está en vertical"
+              >
+                🔄 {isRotated ? "Vista Normal" : "Girar 90°"}
+              </button>
+
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5 ${
+                className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
                   isPlaying
                     ? "border-amber-500/50 bg-amber-950/80 text-amber-300 hover:bg-amber-900"
                     : "border-emerald-500/50 bg-emerald-950/80 text-emerald-300 hover:bg-emerald-900"
                 }`}
               >
-                {isPlaying ? "⏸ Pausar Autoplay" : "▶ Autoplay Carrusel"}
+                {isPlaying ? "⏸ Pausar" : "▶ Autoplay"}
               </button>
 
               <button
                 onClick={toggleFullscreen}
-                className="rounded-xl border border-red-500/40 bg-red-950/60 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-900 transition flex items-center gap-1"
+                className="rounded-xl border border-red-500/40 bg-red-950/60 px-3.5 py-1.5 text-xs font-bold text-red-300 hover:bg-red-900 transition flex items-center gap-1"
               >
-                ✕ Salir (Esc)
+                ✕ Salir
               </button>
             </div>
           </div>
 
           {/* Slide Display Container */}
-          <div className="relative flex-1 my-4 flex items-center justify-center overflow-hidden">
+          <div className="relative flex-1 my-2 flex items-center justify-center overflow-hidden">
             <img
               src={slides[activeSlide]}
               alt={`Diapositiva ${activeSlide + 1}`}
-              className="max-h-[82vh] w-auto max-w-full object-contain rounded-xl shadow-2xl border border-slate-800"
+              className={`transition-all duration-300 object-contain rounded-xl shadow-2xl border border-slate-800 ${
+                isRotated
+                  ? "rotate-90 scale-[1.35] max-h-[60vh] max-w-[85vw] sm:rotate-0 sm:scale-100 sm:max-h-[82vh]"
+                  : "max-h-[80vh] w-auto max-w-full"
+              }`}
             />
           </div>
 
           {/* Bottom Bar Floating Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800/80 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800/80 pt-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveSlide((prev) => (prev > 0 ? prev - 1 : slides.length - 1))}
@@ -285,9 +310,6 @@ export default function LandingClient() {
               >
                 ← Anterior
               </button>
-              <span className="text-xs font-semibold text-cyan-300 px-3 sm:hidden">
-                {activeSlide + 1} / {slides.length}
-              </span>
               <button
                 onClick={() => setActiveSlide((prev) => (prev < slides.length - 1 ? prev + 1 : 0))}
                 className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-200 hover:border-cyan-500 transition"
@@ -311,7 +333,7 @@ export default function LandingClient() {
             </div>
 
             <div className="text-xs text-slate-400 font-mono hidden md:block">
-              Tip: Usa ⬅ ➡ para cambiar, Espacio para Autoplay, Esc para salir
+              Tip: Gira tu celular horizontalmente o usa el botón 🔄 Girar 90°
             </div>
           </div>
         </div>
