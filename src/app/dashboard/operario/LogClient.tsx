@@ -364,10 +364,80 @@ function PersonalLogbook() {
   });
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayLogs = logs.filter((l) => l.rawDate === todayStr);
 
-  const walletToday = todayLogs.reduce((acc, l) => acc + l.total, 0);
-  const piecesToday = todayLogs.reduce((acc, l) => acc + l.units, 0);
+  // Calcular fecha de inicio de esta semana (lunes)
+  const getStartOfWeek = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    return monday.toISOString().slice(0, 10);
+  };
+
+  // Estados para filtro y liquidación por período de cobro
+  const [startDate, setStartDate] = useState<string>(getStartOfWeek());
+  const [endDate, setEndDate] = useState<string>(todayStr);
+  const [periodPreset, setPeriodPreset] = useState<"today" | "week" | "fortnight" | "custom">("week");
+
+  // Función para cambiar de preset rápido de liquidación
+  function applyPeriodPreset(preset: "today" | "week" | "fortnight" | "custom") {
+    setPeriodPreset(preset);
+    const now = new Date();
+    if (preset === "today") {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === "week") {
+      setStartDate(getStartOfWeek());
+      setEndDate(todayStr);
+    } else if (preset === "fortnight") {
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      if (now.getDate() <= 15) {
+        setStartDate(`${year}-${month}-01`);
+        setEndDate(`${year}-${month}-15`);
+      } else {
+        const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+        setStartDate(`${year}-${month}-16`);
+        setEndDate(`${year}-${month}-${lastDay}`);
+      }
+    }
+  }
+
+  // Filtrado de logs por rango de fechas de liquidación
+  const periodLogs = useMemo(() => {
+    return logs.filter((l) => {
+      if (!l.rawDate) return true;
+      return l.rawDate >= startDate && l.rawDate <= endDate;
+    });
+  }, [logs, startDate, endDate]);
+
+  const walletPeriod = useMemo(() => periodLogs.reduce((acc, l) => acc + l.total, 0), [periodLogs]);
+  const piecesPeriod = useMemo(() => periodLogs.reduce((acc, l) => acc + l.units, 0), [periodLogs]);
+
+  const todayLogs = useMemo(() => logs.filter((l) => l.rawDate === todayStr), [logs, todayStr]);
+  const walletToday = useMemo(() => todayLogs.reduce((acc, l) => acc + l.total, 0), [todayLogs]);
+  const piecesToday = useMemo(() => todayLogs.reduce((acc, l) => acc + l.units, 0), [todayLogs]);
+
+  // Generador de mensaje de WhatsApp para Cuenta de Cobro del Período
+  function getLiquidationWhatsAppUrl() {
+    let breakdown = "";
+    periodLogs.forEach((l, index) => {
+      breakdown += `${index + 1}. ${l.prenda} (${l.color}) - ${l.operacion}: ${l.units} uds × ${formatCop(l.tarifa)} = ${formatCop(l.total)}\n`;
+    });
+
+    const text = `🧾 *CUENTA DE COBRO FORMAL DE DESTAJO* \n` +
+      `📅 *Período de Corte:* Desde ${startDate} hasta ${endDate}\n\n` +
+      `💰 *TOTAL A COBRAR:* ${formatCop(walletPeriod)}\n` +
+      `🔢 *Total Piezas Confeccionadas:* ${piecesPeriod} uds\n` +
+      `📋 *Registros en Cuaderno:* ${periodLogs.length} lotes/atados\n\n` +
+      `📌 *DESGLOSE DE ACTIVIDADES:*\n` +
+      (breakdown || "Sin registros en este período\n") +
+      `\n---\n` +
+      `💡 *Nota:* Esta cuenta de cobro fue generada automáticamente desde el Cuaderno Digital de CoreTextil.\n` +
+      `Registre su taller gratis para liquidar nómina a 1 clic: https://coretextil.vercel.app`;
+
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  }
 
   // Captura de foto opcional
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -539,6 +609,143 @@ function PersonalLogbook() {
         </div>
       </div>
 
+      {/* Calculadora y Cierre de Liquidación por Período de Cobro */}
+      <div className="rounded-2xl border border-cyan-500/40 bg-slate-900/80 p-6 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="font-extrabold text-slate-100 flex items-center text-lg">
+              🧮 Calculadora & Cierre de Liquidación (Fecha de Corte)
+              <Tooltip text="Selecciona la fecha de inicio y la fecha de corte para sumar automáticamente lo cosido durante esa semana, quincena o rango personalizado y generar tu cuenta de cobro." />
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Filtra tus cuentas por semana o quincena sin perder el historial anterior.
+            </p>
+          </div>
+
+          {/* Selector de Presets Rápido */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => applyPeriodPreset("today")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+                periodPreset === "today"
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+              }`}
+            >
+              📅 Hoy
+            </button>
+            <button
+              onClick={() => applyPeriodPreset("week")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+                periodPreset === "week"
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+              }`}
+            >
+              🗓️ Esta Semana
+            </button>
+            <button
+              onClick={() => applyPeriodPreset("fortnight")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+                periodPreset === "fortnight"
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+              }`}
+            >
+              📆 Esta Quincena
+            </button>
+            <button
+              onClick={() => setPeriodPreset("custom")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+                periodPreset === "custom"
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+              }`}
+            >
+              ✏️ Personalizado
+            </button>
+          </div>
+        </div>
+
+        {/* Rango de Fechas (Inicio / Fin) */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-end">
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Fecha de Inicio (Conteo)
+              <Tooltip text="Día en que comenzaste a coser este lote o quincena." />
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPeriodPreset("custom");
+              }}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Fecha de Cierre (Liquidación)
+              <Tooltip text="Día límite o fecha de cobro para calcular el total ganado." />
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPeriodPreset("custom");
+              }}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href={getLiquidationWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              📲 Enviar Cuenta de Cobro por WhatsApp
+            </a>
+            <Tooltip text="Genera y envía un mensaje listo por WhatsApp con la cuenta de cobro detallada del período seleccionado." />
+          </div>
+        </div>
+
+        {/* Resumen de Liquidación del Período */}
+        <div className="grid grid-cols-3 gap-3 rounded-xl bg-slate-950 p-4 border border-cyan-500/20">
+          <div>
+            <p className="text-[11px] text-slate-400 flex items-center">
+              Total a Cobrar en Período
+              <Tooltip text="Suma total en pesos colombianos ($ COP) de todas las prendas registradas entre la fecha de inicio y la fecha de cierre." />
+            </p>
+            <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
+              {formatCop(walletPeriod)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] text-slate-400 flex items-center">
+              Piezas en Período
+              <Tooltip text="Cantidad total de piezas cosidas en el rango de fechas seleccionado." />
+            </p>
+            <p className="text-2xl sm:text-3xl font-black text-cyan-300 mt-0.5">
+              {piecesPeriod} <span className="text-xs font-normal text-slate-400">uds</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] text-slate-400 flex items-center">
+              Anotaciones / Lotes
+              <Tooltip text="Número de registros o marcaciones realizadas en el cuaderno dentro de las fechas elegidas." />
+            </p>
+            <p className="text-2xl sm:text-3xl font-black text-amber-300 mt-0.5">
+              {periodLogs.length} <span className="text-xs font-normal text-slate-400">ítems</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Formulario de registro rápido personal */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -695,10 +902,10 @@ function PersonalLogbook() {
 
       {/* Historial de mi Cuaderno */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="font-bold text-slate-200 flex items-center">
-            Historial de mi Cuaderno Personal
-            <Tooltip text="Muestra todas las anotaciones guardadas cronológicamente con día, fecha, hora exacta, valores y fotos. Se almacena localmente en tu teléfono o navegador." />
+            Historial de mi Cuaderno ({periodPreset === "week" ? "Esta Semana" : periodPreset === "fortnight" ? "Esta Quincena" : periodPreset === "today" ? "Hoy" : "Rango Seleccionado"})
+            <Tooltip text="Muestra las anotaciones dentro del período de liquidación seleccionado. Se almacena localmente en tu teléfono o navegador." />
           </h3>
           {logs.length > 0 && (
             <button
@@ -710,13 +917,13 @@ function PersonalLogbook() {
           )}
         </div>
 
-        {logs.length === 0 ? (
+        {periodLogs.length === 0 ? (
           <p className="text-xs text-slate-500 py-4 text-center">
-            Tu cuaderno está limpio. Añade tus primeras piezas producidas arriba.
+            No hay anotaciones registradas en las fechas seleccionadas ({startDate} a {endDate}). Añade prendas producidas arriba.
           </p>
         ) : (
           <div className="space-y-2.5 max-h-80 overflow-y-auto">
-            {logs.map((l) => (
+            {periodLogs.map((l) => (
               <div
                 key={l.id}
                 className="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 text-xs gap-3"
