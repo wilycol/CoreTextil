@@ -38,19 +38,19 @@ const BRAND_CARDS: Card[] = [
     text: "Atiende tickets de faltantes de tus satélites y despacha reposiciones.",
   },
   {
-    href: "/dashboard/ordenes",
-    title: "Liquidar por corte",
-    text: "Paga a tus satélites por prendas entregadas: entregadas vs por ensamblar, a un clic.",
-  },
-  {
     href: "/dashboard/red",
     title: "Mi red de talleres",
     text: "Visualiza, invita y administra los talleres satélite vinculados a tu marca.",
   },
   {
-    href: "/dashboard/marca",
-    title: "Configuración de Marca",
-    text: "Administra tu identidad corporativa, nombre comercial, NIT y datos de contacto.",
+    href: "/dashboard/soporte",
+    title: "💬 Ayuda & Soporte",
+    text: "Reporta fallas, sugiere nuevas funciones y recibe asistencia técnica directa.",
+  },
+  {
+    href: "/dashboard/perfil",
+    title: "⚙️ Ajustes de Cuenta",
+    text: "Respalda tus datos, cambia tu tipo de rol o gestiona tu cuenta.",
   },
 ];
 
@@ -90,6 +90,16 @@ const SATELLITE_CARDS: Card[] = [
     title: "Nómina de operarios",
     text: "Liquidación semanal o quincenal a un clic: piezas y destajo de cada operario, guardada como comprobante.",
   },
+  {
+    href: "/dashboard/soporte",
+    title: "💬 Ayuda & Soporte",
+    text: "Reporta fallas, sugiere nuevas funciones y recibe asistencia técnica directa.",
+  },
+  {
+    href: "/dashboard/perfil",
+    title: "⚙️ Ajustes de Cuenta",
+    text: "Respalda tus datos, cambia tu tipo de rol o gestiona tu cuenta.",
+  },
 ];
 
 const OPERATOR_CARDS: Card[] = [
@@ -114,10 +124,30 @@ const OPERATOR_CARDS: Card[] = [
     text: "Configura tus especialidades, años de experiencia y máquinas que dominas.",
   },
   {
-    href: "/dashboard/tickets",
-    title: "Reportar faltante",
-    text: "¿Falta una pieza o llegó tela dañada? Repórtalo con la nomenclatura del atado.",
+    href: "/dashboard/soporte",
+    title: "💬 Ayuda & Soporte",
+    text: "Reporta fallas, sugiere nuevas funciones y recibe asistencia técnica directa.",
   },
+  {
+    href: "/dashboard/perfil",
+    title: "⚙️ Ajustes de Cuenta",
+    text: "Respalda tus datos, cambia tu tipo de rol o gestiona tu cuenta.",
+  },
+];
+
+const SUPERADMIN_CARDS: Card[] = [
+  {
+    href: "/dashboard/soporte",
+    title: "👑 Mesa de Control SuperAdmin",
+    text: "Administra los tickets de soporte recibidos, responde sugerencias y supervisa el feedback del piloto.",
+  },
+  {
+    href: "/dashboard/perfil",
+    title: "⚙️ Ajustes de Cuenta",
+    text: "Administra tu cuenta administrativa y respalda datos del sistema.",
+  },
+  ...BRAND_CARDS.slice(0, 4),
+  ...SATELLITE_CARDS.slice(0, 4),
 ];
 
 export default async function DashboardPage() {
@@ -204,6 +234,9 @@ export default async function DashboardPage() {
     } else {
       linkInfo = "💼 Operario Libre (Buscando taller)";
     }
+  } else if (profile.role === "superadmin") {
+    cards = SUPERADMIN_CARDS;
+    linkInfo = "👑 Cuenta de Administración Principal (SuperAdmin)";
   } else {
     redirect("/onboarding");
   }

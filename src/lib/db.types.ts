@@ -3,7 +3,8 @@ export type UserRole =
   | "designer"
   | "cutter"
   | "satellite_owner"
-  | "operator";
+  | "operator"
+  | "superadmin";
 
 export type OrderStatus =
   | "draft"
