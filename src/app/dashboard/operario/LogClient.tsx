@@ -284,6 +284,36 @@ export default function LogClient({
   );
 }
 
+{/* Componente Tooltip interactivo (Hover + Click) */}
+function Tooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative inline-flex items-center ml-1.5 align-middle">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-800 text-cyan-400 text-[10px] font-bold border border-cyan-500/40 hover:bg-cyan-950 hover:border-cyan-300 focus:outline-none transition-colors cursor-pointer"
+        aria-label="Ver explicación de este campo"
+      >
+        ?
+      </button>
+
+      {open && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 rounded-xl border border-cyan-500/50 bg-slate-900/95 p-3 text-[11px] font-normal leading-relaxed text-slate-200 shadow-2xl shadow-cyan-950/90 backdrop-blur z-50 pointer-events-none block text-left">
+          <span className="block font-bold text-cyan-300 mb-1">💡 ¿Para qué sirve?</span>
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 {/* Componente del Cuaderno Digital de Trabajo Personal para Operarios libres */}
 function PersonalLogbook() {
   const [workType, setWorkType] = useState<"process" | "full">("process");
@@ -449,40 +479,59 @@ function PersonalLogbook() {
       <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-5 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
               📖 Mi Cuaderno Digital de Destajo (Uso Personal)
+              <Tooltip text="Herramienta gratuita e independiente para anotar la producción diaria que cose un operario sin necesidad de estar registrado formalmente en un taller satélite." />
             </span>
             <h2 className="mt-1 text-2xl font-extrabold text-slate-100">
               Billetera Personal del Día
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setShowTicketModal(true)}
-              className="rounded-xl border border-amber-500/40 bg-amber-950/60 px-4 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-900"
-            >
-              🚨 Generar Ticket WhatsApp
-            </button>
-            <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
-            >
-              📲 Invitar a mi taller satélite
-            </a>
+            <div className="flex items-center">
+              <button
+                onClick={() => setShowTicketModal(false)}
+                type="button"
+                className="hidden"
+              />
+              <button
+                onClick={() => setShowTicketModal(true)}
+                className="rounded-xl border border-amber-500/40 bg-amber-950/60 px-4 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-900 flex items-center gap-1"
+              >
+                🚨 Generar Ticket WhatsApp
+              </button>
+              <Tooltip text="Genera un reporte formal con código único en WhatsApp para notificar piezas faltantes, tela defectuosa o devoluciones de calidad a tu taller o marca." />
+            </div>
+
+            <div className="flex items-center">
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
+              >
+                📲 Invitar a mi taller satélite
+              </a>
+              <Tooltip text="Envía una invitación directa por WhatsApp al dueño o encargado de tu taller para que conozca CoreTextil y pague la nómina a 1 clic." />
+            </div>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-slate-900/80 p-4 border border-slate-800">
           <div>
-            <p className="text-xs text-slate-400">Ganado Hoy ($ COP)</p>
+            <p className="text-xs text-slate-400 flex items-center">
+              Ganado Hoy ($ COP)
+              <Tooltip text="Cálculo automático de tus ingresos acumulados hoy: suma de (Tarifa por pieza × Cantidad de piezas confeccionadas)." />
+            </p>
             <p className="text-3xl font-extrabold text-emerald-400">
               {formatCop(walletToday)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Piezas Contadas Hoy</p>
+            <p className="text-xs text-slate-400 flex items-center">
+              Piezas Contadas Hoy
+              <Tooltip text="Cantidad total de unidades físicas de confección que has sumado a tu cuaderno durante el día de hoy." />
+            </p>
             <p className="text-3xl font-extrabold text-cyan-300">
               {piecesToday} <span className="text-sm font-normal text-slate-400">uds</span>
             </p>
@@ -492,31 +541,40 @@ function PersonalLogbook() {
 
       {/* Formulario de registro rápido personal */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-200">Anotar Producción en mi Cuaderno</h3>
-          <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
-            <button
-              onClick={() => setWorkType("process")}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                workType === "process" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              ⚙️ Por Proceso / Pieza
-            </button>
-            <button
-              onClick={() => setWorkType("full")}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                workType === "full" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              👕 Prenda Completa
-            </button>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="font-bold text-slate-200 flex items-center">
+            Anotar Producción en mi Cuaderno
+            <Tooltip text="Registra cada lote o cantidad de prendas producidas en tu jornada. La aplicación estampa la fecha, el día y la hora automáticamente." />
+          </h3>
+          <div className="flex items-center gap-1">
+            <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+              <button
+                onClick={() => setWorkType("process")}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                  workType === "process" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                ⚙️ Por Proceso / Pieza
+              </button>
+              <button
+                onClick={() => setWorkType("full")}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
+                  workType === "full" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                👕 Prenda Completa
+              </button>
+            </div>
+            <Tooltip text="Modo 'Por Proceso': cuando te pagan por operaciones específicas (Filete, Collarín, Plana). Modo 'Prenda Completa': cuando confeccionas la prenda de principio a fin." />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Prenda / Referencia</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Prenda / Referencia
+              <Tooltip text="Escribe el nombre o referencia del modelo que estás cosiendo (ej: Jean Dama, Camiseta Polo, Pantalón Dril)." />
+            </label>
             <input
               type="text"
               value={prenda}
@@ -527,7 +585,10 @@ function PersonalLogbook() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Color de Prenda</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Color de Prenda
+              <Tooltip text="Indica el tono o color del lote para identificar y agrupar atados (ej: Azul Oscuro, Negro, Marfil)." />
+            </label>
             <input
               type="text"
               value={color}
@@ -538,7 +599,10 @@ function PersonalLogbook() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Operación / Proceso</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Operación / Proceso
+              <Tooltip text="Selecciona la operación de costura o máquina utilizada. Si tu proceso no figura en la lista, selecciona 'Otro proceso' para escribirlo a mano." />
+            </label>
             <select
               value={operacion}
               onChange={(e) => setOperacion(e.target.value)}
@@ -563,7 +627,10 @@ function PersonalLogbook() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Tarifa por Pieza ($ COP)</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
+              Tarifa por Pieza ($ COP)
+              <Tooltip text="El pago en pesos colombianos acordado por cada unidad o pieza terminada en esa operación." />
+            </label>
             <input
               type="number"
               value={tarifa}
@@ -576,10 +643,11 @@ function PersonalLogbook() {
 
         {/* Foto de referencia opcional */}
         <div className="flex items-center gap-4 pt-1">
-          <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-500">
+          <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-500 flex items-center">
             📷 {imagePreview ? "Cambiar foto de referencia" : "Adjuntar foto opcional"}
             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           </label>
+          <Tooltip text="Puedes tomar una foto del atado, la tiqueta o la prenda como comprobante visual guardado en tu cuaderno digital." />
           {imagePreview && (
             <div className="flex items-center gap-2">
               <img src={imagePreview} alt="Preview" className="h-8 w-8 rounded-lg object-cover border border-slate-700" />
@@ -592,7 +660,10 @@ function PersonalLogbook() {
 
         {/* Botones de marcación rápida */}
         <div className="pt-2">
-          <p className="text-xs text-slate-400 mb-2">Sumar Piezas a mi Billetera Personal:</p>
+          <p className="text-xs text-slate-400 mb-2 flex items-center">
+            Sumar Piezas a mi Billetera Personal:
+            <Tooltip text="Toca cualquiera de los botones (+10, +25, +50, +100) para acumular piezas de inmediato o escribe la cantidad exacta y pulsa '+ Sumar'." />
+          </p>
           <div className="flex flex-wrap items-center gap-3">
             {[10, 25, 50, 100].map((qty) => (
               <button
@@ -625,7 +696,10 @@ function PersonalLogbook() {
       {/* Historial de mi Cuaderno */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-slate-200">Historial de mi Cuaderno Personal</h3>
+          <h3 className="font-bold text-slate-200 flex items-center">
+            Historial de mi Cuaderno Personal
+            <Tooltip text="Muestra todas las anotaciones guardadas cronológicamente con día, fecha, hora exacta, valores y fotos. Se almacena localmente en tu teléfono o navegador." />
+          </h3>
           {logs.length > 0 && (
             <button
               onClick={clearLogs}
@@ -675,6 +749,7 @@ function PersonalLogbook() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 flex items-center gap-2">
                 🚨 Generar Ticket Formal de Novedad
+                <Tooltip text="Reporte estructurado para notificar problemas de confección a tu taller o marca con fecha y número de ticket formal." />
               </h3>
               <button
                 onClick={() => setShowTicketModal(false)}
@@ -686,7 +761,10 @@ function PersonalLogbook() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Prenda / Referencia</label>
+                <label className="block text-slate-400 mb-1 flex items-center">
+                  Prenda / Referencia
+                  <Tooltip text="Indica la referencia exacta de la prenda que tiene la novedad." />
+                </label>
                 <input
                   type="text"
                   value={ticketPrenda}
@@ -697,7 +775,10 @@ function PersonalLogbook() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Motivo de Novedad / Problema</label>
+                <label className="block text-slate-400 mb-1 flex items-center">
+                  Motivo de Novedad / Problema
+                  <Tooltip text="Clasifica la novedad: Piezas faltantes en el atado cortado, tela defectuosa de corte, o prendas devueltas para desbaratar y corregir en costura." />
+                </label>
                 <select
                   value={ticketReason}
                   onChange={(e) => setTicketReason(e.target.value as any)}
@@ -711,7 +792,10 @@ function PersonalLogbook() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1">Cantidad de Piezas Afectadas</label>
+                  <label className="block text-slate-400 mb-1 flex items-center">
+                    Cantidad de Piezas Afectadas
+                    <Tooltip text="Número exacto de unidades involucradas en este reporte de novedad." />
+                  </label>
                   <input
                     type="number"
                     value={ticketQty}
@@ -722,7 +806,10 @@ function PersonalLogbook() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Observaciones / Detalle</label>
+                <label className="block text-slate-400 mb-1 flex items-center">
+                  Observaciones / Detalle
+                  <Tooltip text="Agrega detalles o instrucciones específicas para la persona que leerá este ticket en WhatsApp." />
+                </label>
                 <textarea
                   value={ticketNotes}
                   onChange={(e) => setTicketNotes(e.target.value)}
@@ -756,3 +843,4 @@ function PersonalLogbook() {
     </div>
   );
 }
+
