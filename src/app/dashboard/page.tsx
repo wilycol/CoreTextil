@@ -109,6 +109,11 @@ const OPERATOR_CARDS: Card[] = [
     text: "Tu billetera del día y todas tus anotaciones de destajo: corrige, elimina y envía tu cuenta de cobro a 1 clic.",
   },
   {
+    href: "/dashboard/operario/juego",
+    title: "🎮 Aprende jugando",
+    text: "Pac-Operario: 4 niveles rápidos donde aprendes a marcar tu producción real y te ganas tu certificado.",
+  },
+  {
     href: "/dashboard/escanear",
     title: "Escanear atado (QR)",
     text: "Recibe el bulto apuntando a su etiqueta y empieza a marcar de inmediato.",

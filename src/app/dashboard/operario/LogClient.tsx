@@ -442,6 +442,12 @@ function AffiliatedLogbook({ data }: { data: MarkingData }) {
           Para corregir o eliminar una cuenta mal marcada, el operario solicita y el dueño del
           taller confirma. Ningún registro cambia con una sola parte.
         </p>
+        <a
+          href="/dashboard/operario/juego"
+          className="rounded-full border border-amber-500/40 bg-amber-950/50 px-3 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-900"
+        >
+          🎮 Aprende jugando
+        </a>
       </div>
 
       {feedback && (
@@ -915,6 +921,12 @@ function PersonalLogbook() {
             <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
               📖 Mi Cuaderno Digital de Destajo (Uso Personal)
               <Tooltip text="Herramienta gratuita e independiente para anotar la producción diaria que cose un operario sin necesidad de estar registrado formalmente en un taller satélite." />
+              <a
+                href="/dashboard/operario/juego"
+                className="ml-1 rounded-full border border-amber-500/40 bg-amber-950/50 px-2 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-900"
+              >
+                🎮 Aprende jugando
+              </a>
             </span>
             <h2 className="mt-1 text-2xl font-extrabold text-slate-100">
               Billetera Personal del Día

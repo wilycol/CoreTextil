@@ -645,6 +645,37 @@ Operarios y jefes de taller que usan la app en Android/Chrome (caso principal de
 - [ ] **Seguridad de caché:** Navegar a una página autenticada y verificar que NO se sirva desde caché (datos siempre frescos).
 - [ ] **Actualización del SW:** Publicar una nueva versión y verificar que el SW viejo se limpie al activar el nuevo.
 
+---
+
+## 25. PAC-OPERARIO: JUEGO DE ONBOARDING (`/dashboard/operario/juego`)
+
+### 👤 Identidad de Usuario
+Operario (principal), cualquier rol curioso. Juego 2D estilo Pac-Man donde el operario "come" chicles (= piezas de su proceso) y al final de la ruta debe hacer su marcación en el celular.
+
+### 📜 Historia de Usuario (BDD)
+> **Como** operario nuevo con 5 minutos libres,  
+> **quiero** jugar un juego corto donde como chicles y anoto cuántos me comí,  
+> **para** entender sin que nadie me explique cómo funciona mi Cuaderno Digital (marcación real, procesos separados, tope del atado y doble confirmación).
+
+### 🧭 Recorrido UI
+1. **Menú:** tarjeta «🎮 Aprende jugando» (2ª del operario) + botón «🎮 Aprende jugando» dentro del Cuaderno Digital.
+2. **Nivel 1 — La Marcación Exacta:** come chicles azules (mangas/fileteadora) por una serpentina; al final el celular 📱 exige la cifra EXACTA de lo comido.
+3. **Nivel 2 — Dos Procesos, Una Prenda:** cuello rib con chicles azules (filete) y verdes (plana); el quiz pide las 2 cantidades por separado.
+4. **Nivel 3 — El Tope del Atado:** muro 🚧 bloquea la ruta a la mitad; los chicles posteriores se ven pero no se pueden comer.
+5. **Nivel 4 — El Error y el Jefe:** el celular dañado marca 120; el jefe 👻 solo acepta si eliges pedir corrección al dueño (doble confirmación).
+6. **Puente real:** tras cada nivel, réplica del cuaderno real + botón «👉 Hazlo de verdad» hacia `/dashboard/operario`. Certificado 🎓 final con reto por WhatsApp.
+7. **Controles:** swipe sobre el laberinto, D-pad táctil y teclado (flechas/WASD). Progreso guardado en localStorage.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Nivel 1 acepta solo la cifra exacta:** Comer todos los chicles y reportar la cifra correcta → pasa. Reportar la cifra +5 → mensaje de «chicles fantasma» y NO pasa.
+- [ ] **Nivel 2 exige 2 cantidades:** La suma correcta pero mal repartida entre azul/verde NO pasa; el desglose correcto sí.
+- [ ] **Nivel 3 bloquea de verdad:** Verificar que el Pac se detiene en el muro 🚧 aunque insistas, y que los chicles posteriores quedan visibles pero inalcanzables.
+- [ ] **Nivel 4 solo pasa con doble confirmación:** Elegir «no pasa nada» → el juego corrige con la explicación; elegir «pedir corrección» → pasa y muestra la réplica con la corrección aprobada.
+- [ ] **Controles móviles:** Swipe y D-pad funcionan en la PWA Android sin hacer scroll la página.
+- [ ] **Progreso persistente:** Cerrar el juego a mitad de niveles y reabrir: los niveles superados siguen marcados ✅.
+- [ ] **Puente a la app real:** El botón «👉 Hazlo de verdad» lleva a `/dashboard/operario` (Cuaderno Digital).
+- [ ] **Rendimiento:** El juego corre fluido en un Android de gama baja (60 fps aprox.) sin errores en consola.
+
 ## 📌 MATRIZ RESUMEN DE CONTROL MANUAL PARA EL PILOTO
 
 | # | Módulo a Probar | Rol Principal | Acción Clave a Probar | Criterio de Éxito Esperado |
@@ -664,6 +695,7 @@ Operarios y jefes de taller que usan la app en Android/Chrome (caso principal de
 | **13**| Doble confirmación | Operario + Dueño | Solicitar y aprobar corrección/eliminación | El registro solo cambia con ambas partes; tope del atado respetado. |
 | **14**| Invitaciones | Invitado | Login regresa a la invitación con `?next` | Aceptación en 1 clic sin perder el enlace. |
 | **15**| PWA | Operario | Instalar en Android y usar offline-friendly | SW activo; datos autenticados nunca cacheados. |
+| **16**| Pac-Operario (onboarding) | Operario | Jugar los 4 niveles y reportar cifras exactas | Cada nivel enseña una regla real del cuaderno; progreso persistente; puente a la app real. |
 
 ---
 
