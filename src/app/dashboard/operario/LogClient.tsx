@@ -3,6 +3,36 @@
 import { useMemo, useState, useTransition } from "react";
 import { formatCop } from "@/lib/cop";
 import { logProduction } from "./actions";
+import { requestChangeAction, decideChangeAction } from "./changeActions";
+
+export type LogRow = {
+  id: string;
+  loggedAt: string;
+  units: number;
+  earned: number;
+  bundleCode: string | null;
+  size: string | null;
+  color: string | null;
+  operationName: string | null;
+  machine: string | null;
+  rate: number | null;
+  operatorId: string;
+  operatorName: string | null;
+  isMine: boolean;
+};
+
+export type ChangeRequestRow = {
+  id: string;
+  logId: string;
+  changeType: "edit_units" | "delete";
+  newUnits: number;
+  reason: string | null;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  requestedByName: string;
+  bundleCode: string | null;
+  currentUnits: number | null;
+};
 
 export type MarkingData = {
   role: string;
@@ -26,6 +56,10 @@ export type MarkingData = {
   }[];
   done: Record<string, number>; // "bundleId:opId" -> unidades del equipo
   operators?: { id: string; full_name: string }[];
+  isAffiliated: boolean;
+  logbookLogs: LogRow[];
+  pendingRequests: ChangeRequestRow[];
+  recentRequests: ChangeRequestRow[];
 };
 
 const MACHINE_LABEL: Record<string, string> = {
@@ -35,6 +69,65 @@ const MACHINE_LABEL: Record<string, string> = {
 };
 
 export default function LogClient({
+  data,
+  preselectedCode,
+}: {
+  data: MarkingData;
+  preselectedCode?: string | null;
+}) {
+  const preselect = data.bundles.find((b) => b.code === preselectedCode);
+
+  // Pestañas: el Cuaderno Digital es la primera pantalla (regla de negocio UX).
+  // Si se llega desde un escaneo QR (?bundle=CODE), abre directamente Marcación
+  // para que el atado preseleccionado sea visible de inmediato.
+  const [tab, setTab] = useState<"cuaderno" | "marcacion">(
+    preselect ? "marcacion" : "cuaderno"
+  );
+
+  // Si no hay órdenes vinculadas (Operario libre / Lead sin taller registrado),
+  // se activa el Cuaderno Digital Personal (solo esa vista, sin pestañas).
+  if (data.orders.length === 0 && !data.isAffiliated) {
+    return <PersonalLogbook />;
+  }
+
+  // Vista con pestañas: Cuaderno Digital primero, Marcación de Atados segundo
+  return (
+    <div className="space-y-6">
+      <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+        <button
+          type="button"
+          onClick={() => setTab("cuaderno")}
+          className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+            tab === "cuaderno"
+              ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          📖 Cuaderno Digital
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("marcacion")}
+          className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+            tab === "marcacion"
+              ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          ⚙️ Marcación de Atados
+        </button>
+      </div>
+
+      {tab === "cuaderno" && <AffiliatedLogbook data={data} />}
+      {tab === "marcacion" && (
+        <MarkingPanel data={data} preselectedCode={preselectedCode} />
+      )}
+    </div>
+  );
+}
+
+/* Panel de marcación clásico (antes era todo el componente LogClient) */
+function MarkingPanel({
   data,
   preselectedCode,
 }: {
@@ -93,11 +186,6 @@ export default function LogClient({
         setError(res.error ?? "No se pudo registrar.");
       }
     });
-  }
-
-  // Si no hay órdenes vinculadas (Operario libre / Lead sin taller registrado), se activa el Cuaderno Digital Personal
-  if (data.orders.length === 0) {
-    return <PersonalLogbook />;
   }
 
   return (
@@ -278,6 +366,254 @@ export default function LogClient({
             <p className="text-xs font-semibold text-emerald-400">{message}</p>
           )}
           {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   CUADERNO DIGITAL para operarios/jefes AFILIADOS a un taller.
+   Historial de daily_production_logs con doble confirmación:
+   el operario solicita corregir/eliminar y el dueño del taller
+   aprueba o rechaza. Nada cambia con una sola parte.
+   ============================================================ */
+function AffiliatedLogbook({ data }: { data: MarkingData }) {
+  const [pending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [editLog, setEditLog] = useState<LogRow | null>(null);
+  const [editUnits, setEditUnits] = useState("");
+  const [editReason, setEditReason] = useState("");
+
+  const isOwner = data.role === "satellite_owner";
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const myLogs = data.logbookLogs.filter((l) => l.loggedAt === todayStr);
+  const walletToday = myLogs.reduce((acc, l) => acc + l.earned, 0);
+  const piecesToday = myLogs.reduce((acc, l) => acc + l.units, 0);
+
+  function submitRequest(log: LogRow, type: "edit_units" | "delete", newUnits: number, reason: string) {
+    setFeedback(null);
+    startTransition(async () => {
+      const res = await requestChangeAction(log.id, type, newUnits, reason);
+      if (res.ok) {
+        setEditLog(null);
+        setEditUnits("");
+        setEditReason("");
+        setFeedback({
+          ok: true,
+          text:
+            type === "delete"
+              ? "Solicitud de eliminación enviada. El dueño del taller debe confirmarla."
+              : "Solicitud de corrección enviada. El dueño del taller debe confirmarla.",
+        });
+      } else {
+        setFeedback({ ok: false, text: res.error ?? "No se pudo enviar la solicitud." });
+      }
+    });
+  }
+
+  function decide(requestId: string, decision: "approved" | "rejected") {
+    setFeedback(null);
+    startTransition(async () => {
+      const res = await decideChangeAction(requestId, decision);
+      if (res.ok) {
+        setFeedback({ ok: true, text: decision === "approved" ? "Cambio aplicado." : "Solicitud rechazada." });
+        // Recarga completa para reflejar el log ajustado/eliminado
+        window.location.reload();
+      } else {
+        setFeedback({ ok: false, text: res.error ?? "No se pudo procesar la decisión." });
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Billetera del día */}
+      <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-emerald-800 bg-emerald-950/40 p-5">
+        <div>
+          <p className="text-xs text-emerald-300/80">Ganado hoy</p>
+          <p className="text-3xl font-extrabold text-emerald-300">{formatCop(walletToday)}</p>
+        </div>
+        <div className="text-emerald-200/80">
+          <p className="text-xs">Piezas de hoy</p>
+          <p className="text-xl font-bold">{piecesToday}</p>
+        </div>
+        <p className="ml-auto max-w-xs text-[11px] leading-snug text-slate-400">
+          Para corregir o eliminar una cuenta mal marcada, el operario solicita y el dueño del
+          taller confirma. Ningún registro cambia con una sola parte.
+        </p>
+      </div>
+
+      {feedback && (
+        <p className={`text-xs font-semibold ${feedback.ok ? "text-emerald-400" : "text-red-400"}`}>
+          {feedback.text}
+        </p>
+      )}
+
+      {/* Panel del dueño: solicitudes de mi equipo */}
+      {isOwner && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-950/30 p-5">
+          <h3 className="font-bold text-amber-200">
+            🕊️ Solicitudes de corrección de mi equipo ({data.pendingRequests.length} pendientes)
+          </h3>
+          {data.pendingRequests.length === 0 ? (
+            <p className="mt-2 text-xs text-slate-400">
+              No hay solicitudes de cambio pendientes de tus operarios.
+            </p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {data.pendingRequests.map((r) => (
+                <div key={r.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs">
+                  <p className="font-semibold text-slate-200">
+                    {r.requestedByName} ·{" "}
+                    {r.changeType === "delete"
+                      ? "Eliminar anotación"
+                      : `Corregir a ${r.newUnits} piezas`}
+                    {r.bundleCode && <span className="text-slate-500"> · atado {r.bundleCode}</span>}
+                  </p>
+                  {r.reason && <p className="mt-1 text-slate-400">📝 {r.reason}</p>}
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => decide(r.id, "approved")}
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-500 disabled:opacity-40"
+                    >
+                      ✅ Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => decide(r.id, "rejected")}
+                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+                    >
+                      ✕ Rechazar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {data.recentRequests.length > 0 && (
+            <p className="mt-3 text-[11px] text-slate-500">
+              Últimas decididas: {data.recentRequests.slice(0, 3).map((r) => `${r.status === "approved" ? "✅" : "❌"} ${r.requestedByName}`).join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Historial con acciones de solicitud (solo anotaciones propias) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <h3 className="mb-4 font-bold text-slate-200">
+          Historial de anotaciones ({data.logbookLogs.length})
+        </h3>
+        {data.logbookLogs.length === 0 ? (
+          <p className="py-4 text-center text-xs text-slate-500">
+            Aún no hay anotaciones. Registra producción en la pestaña «Marcación de Atados».
+          </p>
+        ) : (
+          <div className="max-h-96 space-y-2.5 overflow-y-auto">
+            {data.logbookLogs.map((l) => (
+              <div
+                key={l.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 text-xs"
+              >
+                <div>
+                  <p className="font-semibold text-slate-200">
+                    {l.bundleCode ?? "Atado"} {l.size && `· ${l.size}`} {l.color && `· ${l.color}`}
+                    {" · "}<span className="text-cyan-300">{l.operationName ?? "Operación"}</span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    {l.loggedAt}
+                    {l.machine && ` · ${l.machine}`}
+                    {l.operatorName && ` · ${l.operatorName}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-right">
+                  <div>
+                    <p className="text-sm font-extrabold text-emerald-400">+{formatCop(l.earned)}</p>
+                    <p className="font-medium text-slate-400">{l.units} piezas</p>
+                  </div>
+                  {l.isMine && (
+                    <div className="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => {
+                          setEditLog(l);
+                          setEditUnits(String(l.units));
+                          setEditReason("");
+                        }}
+                        className="rounded-lg border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-cyan-950 disabled:opacity-40"
+                      >
+                        ✏️ Corregir
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => submitRequest(l, "delete", 0, "")}
+                        className="rounded-lg border border-red-500/40 px-2 py-0.5 text-[10px] font-bold text-red-300 hover:bg-red-950 disabled:opacity-40"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal de corrección */}
+      {editLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+            <h3 className="font-bold text-slate-100">
+              ✏️ Solicitar corrección · {editLog.bundleCode ?? "Anotación"}
+            </h3>
+            <p className="text-xs text-slate-400">
+              Registro actual: <strong className="text-slate-200">{editLog.units} piezas</strong> ·{" "}
+              {formatCop(editLog.earned)}. Tu dueño de taller debe confirmar el cambio.
+            </p>
+            <label className="block text-xs">
+              <span className="mb-1 block text-slate-400">Cantidad correcta (piezas)</span>
+              <input
+                type="number"
+                min={1}
+                value={editUnits}
+                onChange={(e) => setEditUnits(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+              />
+            </label>
+            <label className="block text-xs">
+              <span className="mb-1 block text-slate-400">Motivo (visible para tu dueño)</span>
+              <textarea
+                rows={2}
+                value={editReason}
+                onChange={(e) => setEditReason(e.target.value)}
+                placeholder="Ej: me equivoqué contando, anoté el atado equivocado…"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => submitRequest(editLog, "edit_units", parseInt(editUnits) || 0, editReason)}
+                className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-40"
+              >
+                Enviar solicitud
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditLog(null)}
+                className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -507,6 +843,33 @@ function PersonalLogbook() {
       }
     }
   }
+
+  // Persistencia helper
+  function persistLogs(next: typeof logs) {
+    setLogs(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("coretextil_personal_logs", JSON.stringify(next));
+    }
+  }
+
+  // Edición libre del cuaderno personal: ajusta cantidad, recalcula total
+  function updateLogUnits(id: string, units: number) {
+    if (!Number.isFinite(units) || units <= 0) return;
+    persistLogs(
+      logs.map((l) =>
+        l.id === id ? { ...l, units, total: Math.round(l.tarifa * units) } : l
+      )
+    );
+  }
+
+  // Eliminar una anotación propia del cuaderno personal
+  function deleteLog(id: string) {
+    if (!confirm("¿Eliminar esta anotación de tu cuaderno personal?")) return;
+    persistLogs(logs.filter((l) => l.id !== id));
+  }
+
+  // Vista de iconos compactos alternable
+  const [compactView, setCompactView] = useState(false);
 
   // Estado para el modal de Ticket de Novedades por WhatsApp
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -905,22 +1268,57 @@ function PersonalLogbook() {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="font-bold text-slate-200 flex items-center">
             Historial de mi Cuaderno ({periodPreset === "week" ? "Esta Semana" : periodPreset === "fortnight" ? "Esta Quincena" : periodPreset === "today" ? "Hoy" : "Rango Seleccionado"})
-            <Tooltip text="Muestra las anotaciones dentro del período de liquidación seleccionado. Se almacena localmente en tu teléfono o navegador." />
+            <Tooltip text="Muestra las anotaciones dentro del período de liquidación seleccionado. Se almacena localmente en tu teléfono o navegador. Puedes corregir o eliminar tus propias anotaciones: es tu cuaderno personal." />
           </h3>
-          {logs.length > 0 && (
-            <button
-              onClick={clearLogs}
-              className="text-xs text-slate-500 hover:text-red-400 transition"
-            >
-              Limpiar cuaderno
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {periodLogs.length > 0 && (
+              <button
+                onClick={() => setCompactView((v) => !v)}
+                className="rounded-lg border border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-300 hover:border-cyan-500 hover:text-cyan-300 transition"
+                title="Alternar vista detallada / iconos compactos"
+              >
+                {compactView ? "📋 Detalle" : "🔲 Iconos"}
+              </button>
+            )}
+            {logs.length > 0 && (
+              <button
+                onClick={clearLogs}
+                className="text-xs text-slate-500 hover:text-red-400 transition"
+              >
+                Limpiar cuaderno
+              </button>
+            )}
+          </div>
         </div>
 
         {periodLogs.length === 0 ? (
           <p className="text-xs text-slate-500 py-4 text-center">
             No hay anotaciones registradas en las fechas seleccionadas ({startDate} a {endDate}). Añade prendas producidas arriba.
           </p>
+        ) : compactView ? (
+          /* Vista de iconos pequeños: prenda, piezas y total al tacto */
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 max-h-80 overflow-y-auto">
+            {periodLogs.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => {
+                  if (confirm(`${l.prenda} (${l.color}) · ${l.operacion}\n${l.units} piezas · +${formatCop(l.total)}\n${l.formattedDate}\n\n¿Eliminar esta anotación?`)) {
+                    deleteLog(l.id);
+                  }
+                }}
+                className="flex flex-col items-center rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 text-center transition hover:border-cyan-500"
+                title="Toca para ver el detalle o mantener pulsado para opciones"
+              >
+                <span className="text-2xl" aria-hidden>
+                  {l.workType === "full" ? "👕" : "🧵"}
+                </span>
+                <span className="mt-1 w-full truncate text-[11px] font-bold text-slate-200">{l.prenda}</span>
+                <span className="text-[10px] text-cyan-300">{l.units} pzs</span>
+                <span className="text-[10px] font-bold text-emerald-400">+{formatCop(l.total)}</span>
+              </button>
+            ))}
+          </div>
         ) : (
           <div className="space-y-2.5 max-h-80 overflow-y-auto">
             {periodLogs.map((l) => (
@@ -939,9 +1337,34 @@ function PersonalLogbook() {
                     <p className="text-slate-500 text-[11px]">{l.formattedDate} · Tarifa: {formatCop(l.tarifa)}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-extrabold text-emerald-400 text-sm">+{formatCop(l.total)}</p>
-                  <p className="text-slate-400 font-medium">{l.units} piezas</p>
+                <div className="flex items-center gap-2 text-right">
+                  <div>
+                    <p className="font-extrabold text-emerald-400 text-sm">+{formatCop(l.total)}</p>
+                    <p className="text-slate-400 font-medium">{l.units} piezas</p>
+                  </div>
+                  {/* Cuaderno personal: edición libre inmediata */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = prompt(
+                        `Cantidad correcta de piezas para «${l.prenda} · ${l.operacion}» (actual: ${l.units}):`,
+                        String(l.units)
+                      );
+                      if (input !== null) updateLogUnits(l.id, parseInt(input) || 0);
+                    }}
+                    className="rounded-lg border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-cyan-950"
+                    title="Corregir la cantidad de esta anotación"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteLog(l.id)}
+                    className="rounded-lg border border-red-500/40 px-2 py-0.5 text-[10px] font-bold text-red-300 hover:bg-red-950"
+                    title="Eliminar esta anotación"
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
             ))}

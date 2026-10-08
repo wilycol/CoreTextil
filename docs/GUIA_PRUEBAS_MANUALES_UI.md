@@ -35,6 +35,12 @@ Cada sección aplica la metodología BDD **"Como [Rol] quiero [Acción] para [Be
 16. [Tablero de Tickets de Faltantes (`/dashboard/tickets`)](#16-tablero-de-tickets-de-faltantes-dashboardtickets)
 17. [Reportes Contables y Soporte DIAN (`/dashboard/reportes`)](#17-reportes-contables-y-soporte-dian-dashboardreportes)
 18. [Perfil de Usuario, Re-Onboarding y Baja (`/dashboard/perfil`)](#18-perfil-de-usuario-re-onboarding-y-baja-dashboardperfil)
+19. [Flujo de Invitaciones (`/invite/[token]` + Botón WhatsApp)](#19-flujo-de-invitaciones-invitetoken--botón-whatsapp)
+20. [Mi Red (`/dashboard/red`)](#20-mi-red-dashboarred)
+21. [Configuración de Marca y Banner de Pendientes (`/dashboard/marca`)](#21-configuración-de-marca-y-banner-de-pendientes-dashboarmarca)
+22. [Perfil Técnico del Operario (`/dashboard/operario/perfil`)](#22-perfil-técnico-del-operario-dashboardoperarioperfil)
+23. [Guía Vision Engine — Fotos Calibradas (`/dashboard/guias/vision-engine`)](#23-guía-vision-engine--fotos-calibradas-dashboardguiasvision-engine)
+24. [PWA: Instalación, Service Worker y Modo Offline](#24-pwa-instalación-service-worker-y-modo-offline)
 
 ---
 
@@ -232,7 +238,7 @@ Marca y Taller Satélite.
 4. Botón `🖨️ Imprimir Planilla de Atados QR`.
 5. **Botón "Liquidar Orden completa":** Se activa cuando hay unidades entregadas bajo la regla de ruta completa.
 
-### 开启 (QA Checklist)
+### 🔍 Lista de Verificación Manual (QA Checklist)
 - [ ] **Verificación de Entregadas Parciales:** Con una orden de 100 unidades donde solo 1 operación de 4 fue marcada, verificar que el contador de "Unidades Entregadas" diga `0` y el botón de liquidación no procese valores incompletos.
 - [ ] **Hoja QR:** Presionar "Imprimir Planilla QR". Verificar que los códigos QR se rendericen nítidamente.
 
@@ -308,33 +314,71 @@ Jefe de Satélite (`satellite_owner`).
 
 ---
 
-## 12. BITÁCORA DE OPERARIO Y MARCACIÓN DE DESTAJO (`/dashboard/operario`)
+## 12. CUADERNO DIGITAL Y MARCACIÓN DE DESTAJO (`/dashboard/operario`)
 
 ### 👤 Identidad de Usuario
-Operario de Confección (`operator`).
+Operario de Confección (`operator`), Jefe de Satélite (`satellite_owner`), Operario Libre.
 
-### 📜 Historia de Usuario (BDD)
-> **Como** operario de costura a destajo,  
-> **quiero** registrar fácilmente las piezas que voy cosiendo y calcular mi liquidación por periodo,  
-> **para** tener control de mi dinero ganado y enviar mi cuenta de cobro por WhatsApp.
+### 📜 Historia de Usuario (BDD) — Navegación
+> **Como** operario de costura,  
+> **quiero** que mi **Cuaderno Digital** sea la primera opción del menú y de la página,  
+> **para** anotar y consultar mis cuentas sin buscar entre otras herramientas.
 
-### 🧭 Recorrido UI
-1. **Registrador Rápido de Producción:**
-   - Selector de Atado activo.
-   - Selector de Operación (ej. *Pegar Cierre*).
-   - Campo de Unidades procesadas (1 a 10.000).
-   - Tooltips `ℹ️` informativos en cada campo explicativos para el operario.
-   - Botón `➕ Registrar Piezas`.
-2. **Calculadora de Periodo de Liquidación:**
-   - Filtros de fecha Inicial y Final.
-   - Botones de preajuste: `Semana en Curso`, `Semana Anterior`, `Quincena`.
-   - Tarjetas de resumen: Total Piezas Procesadas, Total Ganado (COP).
-3. **Generador de Cuenta de Cobro WhatsApp:** Botón `📲 Enviar Cuenta de Cobro por WhatsApp`. Abre WhatsApp Web/App con el texto pre-formateado con el desglose de producción.
+### 🧭 Recorrido UI — Estructura con Pestañas (Cuaderno primero)
+1. **Tarjeta del Dashboard:** «📖 Cuaderno Digital» es la PRIMERA tarjeta del menú del operario (antes de Escanear y de la Billetera).
+2. **Página con 2 pestañas:**
+   - **Pestaña 1 — 📖 Cuaderno Digital (por defecto):** Billetera del día (Ganado hoy / Piezas de hoy) + historial de anotaciones.
+   - **Pestaña 2 — ⚙️ Marcación de Atados:** registro formal contra `daily_production_logs` con tope estricto por atado.
+3. **Modo Operario Libre (sin taller):** el Cuaderno Digital Personal (localStorage) toma toda la página: registrador rápido con proceso personalizado («Otro proceso»), foto opcional, calculadora de liquidación por período y cuenta de cobro por WhatsApp.
 
 ### 🔍 Lista de Verificación Manual (QA Checklist)
-- [ ] **Tooltip Informativo:** Hacer hover o clic en el icono `ℹ️`. Verificar que se despliegue la explicación clara.
-- [ ] **Prueba de Límite de Atado:** En un atado de 50 unidades, intentar registrar 60 unidades. Verificar que el servidor o el trigger `enforce_bundle_cap` rechace la marcación.
-- [ ] **Cuenta de Cobro WhatsApp:** Presionar el botón de WhatsApp. Verificar que el texto de mensaje incluya el nombre del operario, las piezas y el monto total en COP.
+- [ ] **Orden del menú:** Verificar que «📖 Cuaderno Digital» aparece PRIMERA en el menú del operario y del satélite.
+- [ ] **Pestaña por defecto:** Al entrar a `/dashboard/operario`, la vista inicial debe ser el Cuaderno Digital, no la marcación.
+- [ ] **Prueba de Límite de Atado:** En un atado de 50 unidades, intentar registrar 60. Verificar que el trigger `enforce_bundle_cap` rechace la marcación.
+- [ ] **Cuenta de Cobro WhatsApp:** Verificar que el mensaje incluya período, total COP, piezas y desglose.
+
+---
+
+### 📜 Historia de Usuario (BDD) — Cuaderno Personal Editable
+> **Como** operario libre que usa su cuaderno personal,  
+> **quiero** corregir o eliminar una anotación si me equivoqué contando,  
+> **para** que mi cuaderno refleje la cuenta real y no arrastre errores a mi liquidación.
+
+### 🧭 Recorrido UI
+1. En el historial, cada anotación tiene botones `✏️` (corregir cantidad) y `🗑️` (eliminar).
+2. Al corregir, el total se recalcula con la tarifa (Cantidad × Tarifa) al instante.
+3. **Botón `🔲 Iconos` / `📋 Detalle`:** alterna entre lista detallada y cuadrícula de iconos pequeños (prenda, piezas y total al tacto; tocar un icono abre confirmación de eliminación).
+4. **Procesos personalizados:** el select «✏️ Otro proceso» permite crear operaciones nuevas que quedan en la lista para usos futuros.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Edición recalcula total:** Corregir de 10 a 25 piezas con tarifa $600. Verificar que el total pase de $6.000 a $15.000 y que la billetera del día suba.
+- [ ] **Eliminación con confirmación:** Tocar 🗑️ y cancelar. Verificar que el registro NO se borre. Confirmar y verificar que desaparezca y la billetera baje.
+- [ ] **Vista de iconos:** Alternar a `🔲 Iconos`. Verificar la cuadrícula con prenda/piezas/total y que al tocar un icono pida confirmación antes de borrar.
+- [ ] **Persistencia:** Corregir una anotación, recargar la PWA y verificar que el cambio sobrevive (localStorage).
+
+---
+
+### 📜 Historia de Usuario (BDD) — Doble Confirmación (Operario Afiliado a Satélite)
+> **Como** operario afiliado a un taller satélite,  
+> **quiero** que corregir o eliminar una anotación del taller requiera la aprobación del dueño,  
+> **para** que ninguna parte pueda alterar sola las cuentas que alimentan la nómina (ej. cuello rib con 2 procesos: fileteadora para pegar y plana para pisar — la desviación típica es anotar los 2 procesos como 1).
+
+### 🧭 Recorrido UI
+1. **Operario (pestaña Cuaderno Digital):** en sus anotaciones ve `✏️ Corregir` y `🗑️ Eliminar`.
+   - Corregir abre modal con cantidad correcta + motivo visible para el dueño.
+   - Enviar crea la solicitud: **el registro NO cambia todavía**; queda «Pendiente».
+2. **Dueño del taller (pestaña Cuaderno Digital):** panel «🕊️ Solicitudes de corrección de mi equipo» con `✅ Aprobar` / `✕ Rechazar`.
+   - Aprobar aplica el cambio: ajusta unidades, recalcula el pago con la tarifa de la operación y respeta el tope del atado; o elimina la anotación.
+   - Rechazar deja el registro intacto.
+3. **Regla de doble confirmación:** una sola parte nunca basta. Solo hay 1 solicitud pendiente por anotación.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **No destructivo:** Solicitar corrección como operario y verificar que el historial SIGA mostrando los valores originales hasta que el dueño apruebe.
+- [ ] **Aprobación aplica y recalcula:** Aprobar una corrección de 50→40 piezas. Verificar unidades, pago (tarifa × 40) y que la billetera del día baje en ambos perfiles.
+- [ ] **Rechazo conservador:** Rechazar una solicitud. Verificar que el registro quede exactamente igual y la solicitud marcada como decidida.
+- [ ] **Eliminación por ambos:** Solicitar eliminación y aprobarla. Verificar que la anotación desaparezca de ambos lados.
+- [ ] **Tope respetado al corregir:** Intentar corregir por encima del cupo libre del atado. Verificar que la RPC `decide_logbook_change` rechace con mensaje claro.
+- [ ] **Aislamiento:** Verificar que el operario solo pueda solicitar cambios sobre SUS anotaciones (RLS `logbook_requests_insert_operator`).
 
 ---
 
@@ -473,6 +517,134 @@ Todos los usuarios.
 
 ---
 
+---
+
+## 19. FLUJO DE INVITACIONES (`/invite/[token]` + Botón WhatsApp)
+
+### 👤 Identidad de Usuario
+Operario o Taller Satélite invitado (con o sin sesión iniciada); Marca/Satélite que invita.
+
+### 📜 Historia de Usuario (BDD)
+> **Como** operario o dueño de taller que recibe un enlace por WhatsApp,  
+> **quiero** abrirlo, iniciar sesión si hace falta y aceptar la invitación en 1 clic,  
+> **para** quedar vinculado a la red y empezar a trabajar de inmediato.
+
+### 🧭 Recorrido UI
+1. **Generación:** En el dashboard, botón «🔗 Invitar Taller Satélite» (marca) o «🔗 Invitar Operario» (satélite) → genera token, copia al portapapeles y abre WhatsApp con mensaje pre-armado.
+2. **Recepción:** `/invite/[token]` muestra la pantalla de aceptación con nombre del invitador y rol destino.
+3. **Sin sesión:** redirige a `/auth/login?next=/invite/TOKEN` — tras el login **regresa a la invitación** (no la pierde).
+4. **Aceptación:** botón de aceptar vincula la cuenta (roles y vínculos según tipo de invitación).
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Enlace válido:** Abrir invitación sin sesión → login → verificar que regresa a `/invite/TOKEN` con `?next` preservado.
+- [ ] **Token inválido/expirado/usado:** Verificar pantalla «Enlace Inválido» sin stack trace expuesto.
+- [ ] **Aceptación idempotente:** Aceptar la misma invitación dos veces. Verificar que no duplique vínculos.
+- [ ] **Aislamiento:** Abrir un token con otra cuenta Google. Verificar que no pueda aceptarse en nombre de otra persona.
+
+---
+
+## 20. MI RED (`/dashboard/red`)
+
+### 👤 Identidad de Usuario
+Todos los roles con red (`brand_admin`, `satellite_owner`, `operator`).
+
+### 📜 Historia de Usuario (BDD)
+> **Como** miembro de la plataforma,  
+> **quiero** ver las marcas, talleres y órdenes con los que estoy vinculado,  
+> **para** conocer el estado de mi red de trabajo en un solo lugar.
+
+### 🧭 Recorrido UI
+- **Marca:** talleres satélite vinculados, con capacidad de invitar más.
+- **Satélite:** marcas afiliadas, órdenes activas en su taller y cuadrilla de operarios a destajo.
+- **Operario:** talleres donde trabaja, historial por taller y billetera acumulada.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Datos por rol:** Iniciar sesión con cada rol. Verificar que solo aparezcan vínculos reales de ese usuario (RLS `satellite_links`).
+- [ ] **Estado vacío:** Usuario nuevo sin vínculos. Verificar mensaje útil (no tabla vacía sin explicación).
+
+---
+
+## 21. CONFIGURACIÓN DE MARCA Y BANNER DE PENDIENTES (`/dashboard/marca`)
+
+### 👤 Identidad de Usuario
+Marca (`brand_admin`, `designer`, `cutter`).
+
+### 📜 Historia de Usuario (BDD)
+> **Como** marca nueva,  
+> **quiero** completar mi NIT y logo corporativo,  
+> **para** que mis fichas técnicas y órdenes queden personalizadas y formales.
+
+### 🧭 Recorrido UI
+1. Formulario de datos de la marca (nombre, NIT/RUT, logo).
+2. **Banner de recordatorio** (`SetupReminderBanner`) en el dashboard mientras falten datos, con botón directo «Configurar Mi Marca».
+3. El banner desaparece al completar logo + NIT.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Banner condicional:** Marca sin NIT → banner visible. Completar → recargar → banner desaparecido.
+- [ ] **Carga de logo:** Subir imagen. Verificar que aparezca como avatar en el dashboard.
+
+---
+
+## 22. PERFIL TÉCNICO DEL OPERARIO (`/dashboard/operario/perfil`)
+
+### 👤 Identidad de Usuario
+Operario (`operator`).
+
+### 📜 Historia de Usuario (BDD)
+> **Como** costurero,  
+> **quiero** registrar mis especialidades, máquinas que domino y experiencia,  
+> **para** aparecer correctamente en la Bolsa de Operarios y recibir ofertas acordes.
+
+### 🧭 Recorrido UI
+1. Formulario: especialidades (multi-selección), máquinas (plana, fileteadora, collarín…), años de experiencia, disponibilidad.
+2. Guardado y reflejo en `/dashboard/talento`.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Persistencia:** Cambiar especialidad y recargar. Verificar que quede guardado.
+- [ ] **Reflejo en marketplace:** Marcar «disponible» y verificar que el operario aparezca en la Bolsa con la especialidad correcta.
+
+---
+
+## 23. GUÍA VISION ENGINE — FOTOS CALIBRADAS (`/dashboard/guias/vision-engine`)
+
+### 👤 Identidad de Usuario
+Marcas y SuperAdmin que preparan fotos para el ADN de prenda.
+
+### 📜 Historia de Usuario (BDD)
+> **Como** marca que va a digitalizar una prenda,  
+> **quiero** la guía de las 5 fotos calibradas con regla px→cm,  
+> **para** que el Vision Engine extraiga medidas y despieces con precisión industrial.
+
+### 🧭 Recorrido UI
+1. Instrucciones paso a paso de las 5 fotos (frente, espalda, despiece, detalle, escala con regla).
+2. Consejos de iluminación, distancia y encuadre.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Aplicabilidad:** Seguir la guía al subir una foto en `/dashboard/nueva-prenda`. Verificar que la IA retorne piezas y medidas coherentes con la escala indicada.
+
+---
+
+## 24. PWA: INSTALACIÓN, SERVICE WORKER Y MODO OFFLINE
+
+### 👤 Identidad de Usuario
+Operarios y jefes de taller que usan la app en Android/Chrome (caso principal del piloto).
+
+### 📜 Historia de Usuario (BDD)
+> **Como** operario en la planta,  
+> **quiero** instalar CoreTextil como app en mi teléfono y que cargue rápido aunque la señal sea mala,  
+> **para** anotar mi producción sin depender de una conexión estable.
+
+### 🧭 Recorrido UI
+1. **Instalación:** Chrome Android → menú ⋮ → «Instalar aplicación» (requiere manifest + iconos + service worker con fetch handler, ya implementados).
+2. **Service Worker** (`/sw.js`): precachea manifest + iconos; cache-first SOLO para activos inmutables — la API y las páginas autenticadas jamás se cachean.
+3. **Registro:** `ServiceWorkerRegister` montado en el layout registra el SW al cargar.
+
+### 🔍 Lista de Verificación Manual (QA Checklist)
+- [ ] **Instalabilidad:** En Android/Chrome, verificar que aparezca «Instalar aplicación» y que la app quede en el launcher con su icono.
+- [ ] **SW activo:** DevTools → Application → Service Workers → estado «activated and running», scope `/`.
+- [ ] **Seguridad de caché:** Navegar a una página autenticada y verificar que NO se sirva desde caché (datos siempre frescos).
+- [ ] **Actualización del SW:** Publicar una nueva versión y verificar que el SW viejo se limpie al activar el nuevo.
+
 ## 📌 MATRIZ RESUMEN DE CONTROL MANUAL PARA EL PILOTO
 
 | # | Módulo a Probar | Rol Principal | Acción Clave a Probar | Criterio de Éxito Esperado |
@@ -488,6 +660,10 @@ Todos los usuarios.
 | **9** | Liquidación | Marca | Liquidar orden finalizada | Exige Ruta Completa 100% en todas las operaciones. |
 | **10**| Soporte / Feedback | Todos | Crear ticket con captura de pantalla | Se registra la evidencia e informa al SuperAdmin. |
 | **11**| Re-Onboarding | Todos | Reiniciar rol escribiendo `CAMBIAR ROL` | Retorna a `/onboarding` sin borrar historial relacional. |
+| **12**| Cuaderno Digital (pestaña 1) | Operario/Satélite | Entrar al dashboard y anotar/corregir | Es la primera tarjeta y la vista inicial; corrección personal inmediata. |
+| **13**| Doble confirmación | Operario + Dueño | Solicitar y aprobar corrección/eliminación | El registro solo cambia con ambas partes; tope del atado respetado. |
+| **14**| Invitaciones | Invitado | Login regresa a la invitación con `?next` | Aceptación en 1 clic sin perder el enlace. |
+| **15**| PWA | Operario | Instalar en Android y usar offline-friendly | SW activo; datos autenticados nunca cacheados. |
 
 ---
 

@@ -56,6 +56,11 @@ const BRAND_CARDS: Card[] = [
 
 const SATELLITE_CARDS: Card[] = [
   {
+    href: "/dashboard/operario",
+    title: "📖 Cuaderno Digital",
+    text: "Tu billetera del día, el historial de anotaciones y las solicitudes de corrección de tu equipo. Primera herramienta del taller.",
+  },
+  {
     href: "/dashboard/escanear",
     title: "Escanear atado (QR)",
     text: "Apunta la cámara a la etiqueta impresa para recibir el bulto y pasar el lote a «En ensamble».",
@@ -74,11 +79,6 @@ const SATELLITE_CARDS: Card[] = [
     href: "/dashboard/talento",
     title: "Bolsa de Operarios",
     text: "Busca costureros libres por especialidad o máquina y contáctalos para tu taller.",
-  },
-  {
-    href: "/dashboard/operario",
-    title: "Marcación de operarios",
-    text: "Botones rápidos de destajo con tope estricto por atado y billetera del día.",
   },
   {
     href: "/dashboard/tickets",
@@ -104,14 +104,14 @@ const SATELLITE_CARDS: Card[] = [
 
 const OPERATOR_CARDS: Card[] = [
   {
+    href: "/dashboard/operario",
+    title: "📖 Cuaderno Digital",
+    text: "Tu billetera del día y todas tus anotaciones de destajo: corrige, elimina y envía tu cuenta de cobro a 1 clic.",
+  },
+  {
     href: "/dashboard/escanear",
     title: "Escanear atado (QR)",
     text: "Recibe el bulto apuntando a su etiqueta y empieza a marcar de inmediato.",
-  },
-  {
-    href: "/dashboard/operario",
-    title: "Marcar producción",
-    text: "Registra tus piezas con botones rápidos y mira tus ganancias acumuladas.",
   },
   {
     href: "/dashboard/red",
