@@ -12,21 +12,27 @@ export type OpLite = {
 
 export default async function SimulatorPage() {
   const { profile } = await getSession();
-  if (profile.role !== "satellite_owner") redirect("/dashboard");
+  if (profile.role !== "satellite_owner" && profile.role !== "superadmin")
+    redirect("/dashboard");
 
   const supabase = await createClient();
 
-  const { data: costProfile } = await supabase
-    .from("satellite_cost_profiles")
-    .select("*")
-    .eq("satellite_user_id", profile.id)
-    .maybeSingle();
-
-  const { data: orders } = await supabase
+  let ordersQuerySim = supabase
     .from("production_orders")
     .select("id, order_number, unit_price_agreed, garment_id, garments(name)")
-    .eq("satellite_user_id", profile.id)
     .order("created_at", { ascending: false });
+  if (profile.role !== "superadmin") {
+    ordersQuerySim = ordersQuerySim.eq("satellite_user_id", profile.id);
+  }
+
+  const [{ data: costProfile }, { data: orders }] = await Promise.all([
+    supabase
+      .from("satellite_cost_profiles")
+      .select("*")
+      .eq("satellite_user_id", profile.id)
+      .maybeSingle(),
+    ordersQuerySim.limit(30),
+  ]);
 
   const orderList = (orders ?? []).map((o: any) => ({
     id: o.id as string,

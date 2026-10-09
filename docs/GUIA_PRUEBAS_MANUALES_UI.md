@@ -662,7 +662,7 @@ Operario (principal), cualquier rol curioso. Juego 2D estilo Pac-Man donde el op
 2. **Nivel 1 — La Marcación Exacta:** come chicles azules (mangas/fileteadora) por una serpentina; al final el celular 📱 exige la cifra EXACTA de lo comido.
 3. **Nivel 2 — Dos Procesos, Una Prenda:** cuello rib con chicles azules (filete) y verdes (plana); el quiz pide las 2 cantidades por separado.
 4. **Nivel 3 — El Tope del Atado:** muro 🚧 bloquea la ruta a la mitad; los chicles posteriores se ven pero no se pueden comer.
-5. **Nivel 4 — El Error y el Jefe:** el celular dañado marca 120; el jefe 👻 solo acepta si eliges pedir corrección al dueño (doble confirmación).
+5. **Nivel 4 — El Fantasma y el Jefe:** un fantasma 👻 persigue al Pac (BFS real) y el laberinto trae atajos abiertos entre filas; si te atrapa, reintentas el nivel. El celular dañado marca 120; el jefe solo acepta si eliges pedir corrección al dueño (doble confirmación).
 6. **Puente real:** tras cada nivel, réplica del cuaderno real + botón «👉 Hazlo de verdad» hacia `/dashboard/operario`. Certificado 🎓 final con reto por WhatsApp.
 7. **Controles:** swipe sobre el laberinto, D-pad táctil y teclado (flechas/WASD). Progreso guardado en localStorage.
 
@@ -675,6 +675,12 @@ Operario (principal), cualquier rol curioso. Juego 2D estilo Pac-Man donde el op
 - [ ] **Progreso persistente:** Cerrar el juego a mitad de niveles y reabrir: los niveles superados siguen marcados ✅.
 - [ ] **Puente a la app real:** El botón «👉 Hazlo de verdad» lleva a `/dashboard/operario` (Cuaderno Digital).
 - [ ] **Rendimiento:** El juego corre fluido en un Android de gama baja (60 fps aprox.) sin errores en consola.
+- [ ] **Nivel 4 fantasma persigue:** El fantasma sigue al Pac por la ruta más corta (BFS); si lo atrapa aparece la pantalla 👻 “El fantasma del taller te atrapó!” y el nivel se puede reintentar.
+- [ ] **Nivel 4 atajos:** Verificar que entre filas de pasillo hay aberturas extra (no solo los extremos de la serpentina): el Pac puede cambiar de fila por el medio del laberinto.
+- [ ] **Cuaderno Manual Global (operario libre):** Sin órdenes ni taller, entrar a `/dashboard/operario`: aparece el cuaderno personal con formulario completo (prenda desplegable tipo franela/camiseta/pantalón/short, pieza/proceso, color, tela, foto, tarifa) y botones «＋ Sumar» / «− Restar»; una resta aparece en rojo y descuenta del total.
+- [ ] **Cuaderno Manual Global (operario afiliado):** Con órdenes activas, entrar a Cuaderno Digital: la PRIMERA pestaña ahora muestra el mismo formulario global (anotación manual sin atado); la pestaña «Marcación de Atados» funciona igual que antes.
+- [ ] **Cuaderno del dueño (trabajo propio):** Iniciar sesión como `satellite_owner`: la pestaña «Cuaderno Digital» muestra «Mi Producción Propia» con el formulario global permitiéndole al dueño también coser y anotar su propio ensamblaje; hay una 3ª pestaña «Solicitudes» con las correcciones pendientes del equipo.
+- [ ] **Superadmin omnipresente:** Iniciar sesión como `superadmin`: el dashboard muestra las nuevas tarjetas «Cuaderno Digital (vista equipo)» y «Escanear atado (QR)»; entrar a Cuaderno Digital muestra el historial de TODOS los operarios y las solicitudes de corrección sin restricción de taller (tras ejecutar la migración 0034).
 
 ## 📌 MATRIZ RESUMEN DE CONTROL MANUAL PARA EL PILOTO
 
@@ -695,7 +701,10 @@ Operario (principal), cualquier rol curioso. Juego 2D estilo Pac-Man donde el op
 | **13**| Doble confirmación | Operario + Dueño | Solicitar y aprobar corrección/eliminación | El registro solo cambia con ambas partes; tope del atado respetado. |
 | **14**| Invitaciones | Invitado | Login regresa a la invitación con `?next` | Aceptación en 1 clic sin perder el enlace. |
 | **15**| PWA | Operario | Instalar en Android y usar offline-friendly | SW activo; datos autenticados nunca cacheados. |
-| **16**| Pac-Operario (onboarding) | Operario | Jugar los 4 niveles y reportar cifras exactas | Cada nivel enseña una regla real del cuaderno; progreso persistente; puente a la app real. |
+| **16**| Pac-Operario (onboarding) | Operario | Jugar los 4 niveles y reportar cifras exactas | Cada nivel enseña una regla real del cuaderno; nivel 4 con fantasma y atajos; progreso persistente; puente a la app real. |
+| **17**| Cuaderno Manual Global | Operario (+ Dueño) | Anotar con formulario global: prenda/pieza/color/tela/foto y sumar/restar | Sirve para cualquier prenda textil; restas descontadas; foto y WhatsApp funcionan. |
+| **18**| Registro propio del dueño | Satellite Owner | Anotar su propia producción de ensamblaje en su taller | Dueño refleja su trabajo en su cuaderno; solicitudes de operarios en pestaña aparte. |
+| **19**| SuperAdmin Access | Superadmin | Abrir Cuaderno Digital y Escáner desde el dashboard | Ve anotaciones de todos los operarios y gestiona solicitudes sin bloqueos de taller. |
 
 ---
 

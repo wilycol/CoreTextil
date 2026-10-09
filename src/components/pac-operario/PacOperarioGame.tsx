@@ -21,6 +21,8 @@ type LevelConfig = {
   dots: number;
   /** Nivel 3: muro que bloquea la ruta a la mitad */
   cap?: boolean;
+  /** Nivel 4: fantasma perseguidor */
+  ghost?: boolean;
   processLabel: (dots: Dot) => string;
 };
 
@@ -55,11 +57,12 @@ const LEVELS: LevelConfig[] = [
   },
   {
     id: 4,
-    title: "El Error y el Jefe",
+    title: "El Fantasma y el Jefe",
     emoji: "👻",
     intro:
-      "Ruta corta y rápida. Pero cuidado: en este nivel el celular está dañado y puede marcar mal. Si eso pasa, verás al JEFE del taller. Recuerda: en la vida real, corregir una anotación del taller requiere que AMBOS confirmen.",
+      "Atención: un FANTASMA del taller persigue tu ruta y hay atajos abiertos en el laberinto. Si te atrapa, reintentas. Evalúa qué camino te deja comer más chicles sin ser atrapado. Pero cuidado: el celular está dañado y puede marcar mal. Si eso pasa, verás al JEFE. En la vida real, corregir una anotación requiere que AMBOS confirmen.",
     dots: 46,
+    ghost: true,
     processLabel: () => "Cosir bolsillos (Plana)",
   },
 ];
@@ -67,7 +70,16 @@ const LEVELS: LevelConfig[] = [
 const BLUE = "#38bdf8";
 const GREEN = "#34d399";
 
-/* ---------------- Generación del laberinto serpentina ---------------- */
+/* ---------------- Generación del laberinto (serpentina + atajos) ---------------- */
+
+type Ghost = {
+  cell: { x: number; y: number };
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  t: number; // 0..1 entre celdas
+  dir: { x: number; y: number };
+  speed: number; // celdas por segundo
+};
 
 type Maze = {
   cols: number;
@@ -79,6 +91,10 @@ type Maze = {
   totalDots: number;
   /** Nivel 3: máximo comible por el muro del tope */
   cap: number | null;
+  /** Extra loops/atajos conectando la serpentina (niveles 3 y 4) */
+  shortcuts: boolean;
+  /** ¿El nivel trae fantasma perseguidor? (nivel 4) */
+  ghost: boolean;
 };
 
 const COLS = 17; // 15 celdas de pasillo
@@ -149,6 +165,20 @@ function buildMaze(cfg: LevelConfig): Maze {
       color: cfg.id === 2 && i >= half ? "green" : "blue",
       eaten: false,
     });
+  }  // Niveles 3 y 4: abrir atajos (puertas entre filas vecinas de pasillo).
+  // Así el jugador evalúa rutas: «por aquí me alcanza el fantasma, mejor voy por el atajo».
+  const gl = cfg.ghost || cfg.cap ? true : false;
+  if (gl) {
+    // Elegir conectores verticales extra: en la serpentina solo midLow/midHigh
+    // conectan filas; abrimos 4-6 posiciones alternas entre pares de filas.
+    const pairs: number[][] = [];
+    for (let r = 0; r + 2 < rows; r += 2) pairs.push([r, r + 2]);
+    const picks = pairs.filter(() => Math.random() < 0.45).slice(0, 6);
+    for (const [r1, r2] of picks) {
+      // Conectar una columna intermedia entre las dos filas de pasillo
+      const x = midLow + 1 + Math.floor(Math.random() * Math.max(1, midHigh - midLow - 1));
+      wallSet.delete(`${x},${r1 + 1}`);
+    }
   }
 
   return {
@@ -157,15 +187,25 @@ function buildMaze(cfg: LevelConfig): Maze {
     walls: wallSet,
     dots,
     start,
+
     phone,
     totalDots: dots.length,
     cap: wallIdx >= 0 ? wallIdx - 2 : null, // alcanzables antes del muro y del teléfono
+    shortcuts: gl,
+    ghost: !!cfg.ghost,
   };
 }
 
 /* ---------------- Componente principal ---------------- */
 
-type Phase = "menu" | "intro" | "playing" | "quiz" | "result" | "certificate";
+type Phase =
+  | "menu"
+  | "intro"
+  | "playing"
+  | "quiz"
+  | "result"
+  | "certificate"
+  | "caught";
 
 const STORAGE_KEY = "coretextil_pac_progress";
 
@@ -191,8 +231,63 @@ export default function PacOperarioGame() {
   });
   const eatenRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const ghostRef = useRef<Ghost | null>(null);
+  const [caught, setCaught] = useState(false);
   const phaseRef = useRef<Phase>("menu");
   phaseRef.current = phase;
+
+  /* Movimiento del fantasma: greedy BFS hacia el Pac (cada llegada de celda) */
+  const stepGhost = useCallback(
+    (maze: Maze, pacCell: { x: number; y: number }) => {
+      const g = ghostRef.current;
+      if (!g) return;
+      // BFS desde el fantasma hacia el Pac (laberinto pequeño: barato)
+      const key = (x: number, y: number) => `${x},${y}`;
+      const q: { x: number; y: number; d: Array<{ x: number; y: number }> }[] = [
+        { x: g.cell.x, y: g.cell.y, d: [] },
+      ];
+      const seen = new Set([key(g.cell.x, g.cell.y)]);
+      let bestD: { x: number; y: number }[] | null = null;
+      while (q.length && !bestD) {
+        const cur = q.shift()!;
+        for (const [dx, dy] of [
+          [1, 0], [-1, 0], [0, 1], [0, -1],
+        ] as const) {
+          const nx = cur.x + dx;
+          const ny = cur.y + dy;
+          if (seen.has(key(nx, ny)) || maze.walls.has(key(nx, ny))) continue;
+          seen.add(key(nx, ny));
+          const nd = [...cur.d, { x: dx, y: dy }] as { x: number; y: number }[];
+          if (nx === pacCell.x && ny === pacCell.y) {
+            bestD = nd;
+            break;
+          }
+          q.push({ x: nx, y: ny, d: nd });
+        }
+      }
+      if (!bestD || bestD.length === 0) {
+        // Sin ruta (o ya encima): deambular aleatorio
+        const opts = ([
+          [1, 0], [-1, 0], [0, 1], [0, -1],
+        ] as const).filter(
+          ([dx, dy]) => !maze.walls.has(key(g.cell.x + dx, g.cell.y + dy))
+        );
+        if (opts.length === 0) return;
+        const [dx, dy] = opts[Math.floor(Math.random() * opts.length)];
+        g.from = { ...g.cell };
+        g.to = { x: g.cell.x + dx, y: g.cell.y + dy };
+        g.t = 0;
+        g.dir = { x: dx, y: dy };
+        return;
+      }
+      const step = bestD[0];
+      g.from = { ...g.cell };
+      g.to = { x: g.cell.x + step.x, y: g.cell.y + step.y };
+      g.t = 0;
+      g.dir = step;
+    },
+    []
+  );
 
   /* Progreso persistente */
   useEffect(() => {
@@ -249,6 +344,29 @@ export default function PacOperarioGame() {
         queued: { x: 1, y: 0 },
         moving: false,
       };
+      // Fantasma: aparece lejos (a mitad de ruta) y persigue con velocidad
+      // ligeramente inferior a la del Pac para que la huida sea posible.
+      if (maze.ghost) {
+        const pathCells: { x: number; y: number }[] = [];
+        for (let y = 0; y < maze.rows; y++)
+          for (let x = 0; x < maze.cols; x++)
+            if (!maze.walls.has(`${x},${y}`) && !(x === maze.start.x && y === maze.start.y))
+              pathCells.push({ x, y });
+        const far = pathCells[Math.floor(pathCells.length * 0.55)] ?? pathCells[0];
+        ghostRef.current = far
+          ? {
+              cell: { ...far },
+              from: { ...far },
+              to: { ...far },
+              t: 1,
+              dir: { x: 0, y: 0 },
+              speed: 6.4,
+            }
+          : null;
+      } else {
+        ghostRef.current = null;
+      }
+      setCaught(false);
       setLevelIdx(idx);
       setPhase("playing");
     },
@@ -356,6 +474,28 @@ export default function PacOperarioGame() {
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       const pac = pacRef.current;
+      const mazeNow = mazeRef.current!;
+
+      // Fantasma: avanza y decide su próxima celda persiguiendo al Pac
+      const g = ghostRef.current;
+      if (g && mazeNow.ghost) {
+        if (g.t >= 1) stepGhost(mazeNow, pac.cell);
+        g.t += g.speed * dt;
+        if (g.t >= 1) g.cell = { ...g.to };
+        // ¿Atrapó al Pac? (distancia entre centros < media celda)
+        const gx = g.from.x + (g.to.x - g.from.x) * Math.min(g.t, 1);
+        const gy = g.from.y + (g.to.y - g.from.y) * Math.min(g.t, 1);
+        const px = pac.from.x + (pac.to.x - pac.from.x) * Math.min(pac.t, 1);
+        const py = pac.from.y + (pac.to.y - pac.from.y) * Math.min(pac.t, 1);
+        if (Math.hypot(gx - px, gy - py) < 0.75) {
+          beep(140, 0.4);
+          setCaught(true);
+          cancelled = true;
+          cancelAnimationFrame(rafRef.current ?? 0);
+          setPhase("caught");
+          return;
+        }
+      }
 
       if (pac.moving) {
         pac.t += SPEED * dt;
@@ -369,7 +509,7 @@ export default function PacOperarioGame() {
         }
       }
 
-      draw(canvas!, mazeRef.current!, pacRef.current, now);
+      draw(canvas!, mazeNow, pacRef.current, ghostRef.current, now);
       rafRef.current = requestAnimationFrame(loop);
     }
     rafRef.current = requestAnimationFrame(loop);
@@ -378,7 +518,7 @@ export default function PacOperarioGame() {
       cancelled = true;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [phase, beep]);
+  }, [phase, beep, stepGhost]);
 
   /* --------- Swipe táctil --------- */
   const touchRef = useRef<{ x: number; y: number } | null>(null);
@@ -404,6 +544,7 @@ export default function PacOperarioGame() {
     canvas: HTMLCanvasElement,
     maze: Maze,
     pac: { from: { x: number; y: number }; to: { x: number; y: number }; t: number; dir: { x: number; y: number }; moving: boolean },
+    ghost: Ghost | null,
     now: number
   ) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -469,6 +610,37 @@ export default function PacOperarioGame() {
     // Gorro de operario
     ctx.fillStyle = "#f97316";
     ctx.fillRect(ix - cellSize * 0.28, iy - cellSize * 0.52, cellSize * 0.56, cellSize * 0.14);
+
+    // Fantasma perseguidor (tiempo del taller ⏱ en el nivel 4)
+    if (ghost && maze.ghost) {
+      const gx = (ghost.from.x + (ghost.to.x - ghost.from.x) * Math.min(ghost.t, 1)) * cellSize + cellSize / 2;
+      const gy = (ghost.from.y + (ghost.to.y - ghost.from.y) * Math.min(ghost.t, 1)) * cellSize + cellSize / 2;
+      // Cuerpo clásico de fantasma (onda inferior)
+      ctx.fillStyle = "#c084fc";
+      ctx.beginPath();
+      ctx.arc(gx, gy - cellSize * 0.08, cellSize * 0.34, Math.PI, 0);
+      ctx.lineTo(gx + cellSize * 0.34, gy + cellSize * 0.26);
+      // Onda inferior con 3 puntas
+      for (let i = 2; i >= -2; i--) {
+        const px2 = gx + (i / 2) * cellSize * 0.68;
+        ctx.lineTo(px2, gy + cellSize * (i % 2 === 0 ? 0.26 : 0.1));
+      }
+      ctx.closePath();
+      ctx.fill();
+      // Ojos que miran hacia la dirección del fantasma
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(gx - cellSize * 0.12, gy - cellSize * 0.12, cellSize * 0.09, 0, Math.PI * 2);
+      ctx.arc(gx + cellSize * 0.12, gy - cellSize * 0.12, cellSize * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1e1b4b";
+      const ox = ghost.dir.x * cellSize * 0.04;
+      const oy = ghost.dir.y * cellSize * 0.04;
+      ctx.beginPath();
+      ctx.arc(gx - cellSize * 0.12 + ox, gy - cellSize * 0.12 + oy, cellSize * 0.045, 0, Math.PI * 2);
+      ctx.arc(gx + cellSize * 0.12 + ox, gy - cellSize * 0.12 + oy, cellSize * 0.045, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   /* --------- Lógica del quiz --------- */
@@ -556,6 +728,34 @@ export default function PacOperarioGame() {
     );
   }
 
+  if (phase === "caught") {
+    return (
+      <div className="mx-auto max-w-md rounded-2xl border border-purple-500/60 bg-slate-900/90 p-6 text-center">
+        <p className="text-5xl">👻</p>
+        <h3 className="mt-2 text-xl font-extrabold text-purple-300">
+          ¡El fantasma del taller te atrapó!
+        </h3>
+        <p className="mt-2 text-sm text-slate-300">
+          Comiste {eaten} chicles antes de que te alcanzara. En la vida real, si el
+          supervisor te ve corriendo con piezas sin reportar, te pide cuenta de todo.
+          Igual aquí: intenta de nuevo una ruta con menos riesgo y más chicles.
+        </p>
+        <button
+          onClick={() => startLevel(levelIdx)}
+          className="mt-4 w-full rounded-xl bg-cyan-600 py-3 text-sm font-bold text-white hover:bg-cyan-500"
+        >
+          🔁 Reintentar nivel {cfg.id}
+        </button>
+        <button
+          onClick={() => setPhase("menu")}
+          className="mt-2 w-full rounded-xl border border-slate-800 py-2 text-xs text-slate-400 hover:text-white"
+        >
+          ← Menú
+        </button>
+      </div>
+    );
+  }
+
   if (phase === "intro") {
     return (
       <div className="mx-auto max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
@@ -567,7 +767,10 @@ export default function PacOperarioGame() {
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">{cfg.intro}</p>
         <div className="mt-4 rounded-xl bg-slate-950 p-3 text-xs text-slate-400">
-          🎮 Controles: desliza el dedo sobre el laberinto o usa las flechas.
+          🎮 Controles: desliza el dedo sobre el laberinto o usa las flechas.{" "}
+          {cfg.ghost && <span className="text-purple-300 font-semibold">
+            Nivel con fantasma 👻: hay atajos abiertos, elige bien tu ruta.
+          </span>}
         </div>
         <button
           onClick={() => startLevel(levelIdx)}
@@ -588,6 +791,7 @@ export default function PacOperarioGame() {
   const total = maze?.totalDots ?? 0;
   const capLevel = cfg.cap;
   const capValue = capLevel ? (maze?.cap ?? 0) : 0;
+  const hasGhost = !!maze?.ghost;
 
   return (
     <div className="mx-auto max-w-md space-y-3">
@@ -598,6 +802,7 @@ export default function PacOperarioGame() {
         </span>
         <span className="text-slate-300">
           {capLevel ? `${eaten} / ${capValue} 🚧` : `${eaten} / ${total} 🍬`}
+          {hasGhost && <span className="ml-2 text-purple-300">👻 persiguiendo…</span>}
         </span>
       </div>
 

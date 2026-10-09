@@ -9,7 +9,11 @@ export default async function ScanPage({
   const { profile } = await getSession();
   const { bundle: bundleParam } = await searchParams;
 
-  if (profile.role !== "satellite_owner" && profile.role !== "operator") {
+  if (
+    profile.role !== "satellite_owner" &&
+    profile.role !== "operator" &&
+    profile.role !== "superadmin"
+  ) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
         El escáner es para talleres satélite y sus operarios. Las marcas ven el

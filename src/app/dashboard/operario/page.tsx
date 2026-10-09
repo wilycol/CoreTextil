@@ -11,7 +11,10 @@ export default async function OperatorLogPage({
   const supabase = await createClient();
   const { bundle: bundleParam } = await searchParams;
 
-  if (profile.role !== "operator" && profile.role !== "satellite_owner") {
+  // Superadmin tiene vista omnipresente: ve el cuaderno como si fuera jefe de taller
+  const isSuperAdmin = profile.role === "superadmin";
+
+  if (profile.role !== "operator" && profile.role !== "satellite_owner" && !isSuperAdmin) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
         La marcación es para operarios y jefes de taller.
@@ -19,15 +22,21 @@ export default async function OperatorLogPage({
     );
   }
 
-  // Órdenes de mi satélite (operario: la de mi jefe; jefe: las mías)
+  // Órdenes: operario → las de mi jefe; superadmin → supervisa todas las órdenes
   const satelliteId =
-    profile.role === "operator" ? profile.satellite_owner_id : profile.id;
+    profile.role === "operator"
+      ? profile.satellite_owner_id
+      : isSuperAdmin
+        ? null // sin filtro por satélite (RLS de superadmin las permite)
+        : profile.id;
 
-  const { data: orders } = await supabase
+  let ordersQuery = supabase
     .from("production_orders")
     .select("id, order_number, garment_id, unit_price_agreed, garments(name)")
-    .eq("satellite_user_id", satelliteId)
     .order("created_at", { ascending: false });
+  if (satelliteId !== null) ordersQuery = ordersQuery.eq("satellite_user_id", satelliteId);
+
+  const { data: orders } = await ordersQuery.limit(50);
 
   const orderRows = (orders ?? []) as any[];
   const orderIds = orderRows.map((o) => o.id);
@@ -74,14 +83,21 @@ export default async function OperatorLogPage({
     0
   );
 
-  // Fetch team if the user is a satellite owner
+  // Fetch team if the user is a satellite owner (superadmin: todo el equipo)
   let operators: { id: string; full_name: string }[] = [];
-  if (profile.role === "satellite_owner") {
-    const { data: team } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("satellite_owner_id", profile.id)
-      .eq("role", "operator");
+  if (profile.role === "satellite_owner" || isSuperAdmin) {
+    const { data: team } = isSuperAdmin
+      ? await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("role", "operator")
+          .not("satellite_owner_id", "is", null)
+          .limit(200)
+      : await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("satellite_owner_id", profile.id)
+          .eq("role", "operator");
     operators = (team ?? []) as any[];
   }
 
@@ -103,9 +119,11 @@ export default async function OperatorLogPage({
   const { data: rawLogs } =
     profile.role === "operator"
       ? await logsQuery.eq("operator_id", profile.id)
-      : orderIds.length
-        ? await logsQuery.in("order_id", orderIds)
-        : { data: [] };
+      : isSuperAdmin
+        ? await logsQuery
+        : orderIds.length
+          ? await logsQuery.in("order_id", orderIds)
+          : { data: [] };
 
   // Nombres de operarios del equipo (para mostrar quién anotó)
   const operatorNameMap = new Map<string, string>();
@@ -135,13 +153,14 @@ export default async function OperatorLogPage({
   const reqSelect =
     "id, log_id, requested_by, change_type, new_units, reason, status, decided_at, created_at";
 
-  if (profile.role === "satellite_owner") {
-    const { data: reqs } = await supabase
+  if (profile.role === "satellite_owner" || isSuperAdmin) {
+    let reqsQuery = supabase
       .from("logbook_change_requests")
       .select(reqSelect + ", daily_production_logs(bundle_code)")
-      .eq("approver_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(50);
+    if (!isSuperAdmin) reqsQuery = reqsQuery.eq("approver_id", profile.id);
+    const { data: reqs } = await reqsQuery;
     const reqRows = ((reqs ?? []) as any[]).map((r) => ({
       id: r.id,
       logId: r.log_id,
@@ -180,7 +199,7 @@ export default async function OperatorLogPage({
   }
 
   const data: MarkingData = {
-    role: profile.role,
+    role: isSuperAdmin ? "satellite_owner" : profile.role,
     walletToday,
     piecesToday,
     orders: orderRows.map((o) => ({
@@ -205,11 +224,17 @@ export default async function OperatorLogPage({
     })),
     done,
     operators,
-    isAffiliated: !!satelliteId,
+    isAffiliated: !!satelliteId || isSuperAdmin,
     logbookLogs: logRows,
     pendingRequests,
     recentRequests,
   };
 
-  return <LogClient data={data} preselectedCode={bundleParam ?? null} />;
+  return (
+    <LogClient
+      data={data}
+      preselectedCode={bundleParam ?? null}
+      manualKeySuffix={profile.id}
+    />
+  );
 }

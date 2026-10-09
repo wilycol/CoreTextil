@@ -10,14 +10,18 @@ export default async function MiTallerPage() {
   const { profile, userId } = await getSession();
   const supabase = await createClient();
 
-  if (profile.role !== "satellite_owner") {
+  if (profile.role !== "satellite_owner" && profile.role !== "superadmin") {
     redirect("/dashboard");
   }
+
+  // Superadmin explora la configuración de talleres sin poseer uno
+  const viewingUserId = profile.role === "superadmin" ? null : userId;
+  const targetUserId = viewingUserId ?? userId;
 
   const { data: costProfile } = await supabase
     .from("satellite_cost_profiles")
     .select("*")
-    .eq("satellite_user_id", userId)
+    .eq("satellite_user_id", targetUserId)
     .maybeSingle();
 
   return (

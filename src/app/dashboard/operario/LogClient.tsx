@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { formatCop } from "@/lib/cop";
 import { logProduction } from "./actions";
 import { requestChangeAction, decideChangeAction } from "./changeActions";
+import ManualLogbook from "./ManualLogbook";
 
 export type LogRow = {
   id: string;
@@ -71,34 +72,45 @@ const MACHINE_LABEL: Record<string, string> = {
 export default function LogClient({
   data,
   preselectedCode,
+  manualKeySuffix,
 }: {
   data: MarkingData;
   preselectedCode?: string | null;
+  manualKeySuffix?: string | null;
 }) {
+  // Clave de almacenamiento del cuaderno manual (por usuario, evita mezclar
+  // roles en el mismo navegador)
+  const manualStorageKey = `coretextil_manual_${manualKeySuffix ?? "libre"}`;
   const preselect = data.bundles.find((b) => b.code === preselectedCode);
 
-  // Pestañas: el Cuaderno Digital es la primera pantalla (regla de negocio UX).
-  // Si se llega desde un escaneo QR (?bundle=CODE), abre directamente Marcación
-  // para que el atado preseleccionado sea visible de inmediato.
-  const [tab, setTab] = useState<"cuaderno" | "marcacion">(
-    preselect ? "marcacion" : "cuaderno"
+  // Si se llega desde un escaneo QR (?bundle=CODE), abre directamente Marcación.
+  // El dueño del taller ve además la pestaña de Solicitudes de su equipo.
+  const isOwner = data.role === "satellite_owner";
+  const [tab, setTab] = useState<"manual" | "marcacion" | "solicitudes">(
+    preselect ? "marcacion" : "manual"
   );
 
-  // Si no hay órdenes vinculadas (Operario libre / Lead sin taller registrado),
-  // se activa el Cuaderno Digital Personal (solo esa vista, sin pestañas).
+  // Operario libre (sin órdenes ni taller): cuaderno manual a pantalla completa
   if (data.orders.length === 0 && !data.isAffiliated) {
-    return <PersonalLogbook />;
+    return (
+      <ManualLogbook
+        storageKey={manualStorageKey}
+        variant="personal"
+        title="📖 Mi Cuaderno de Destajo (Uso Personal)"
+        subtitle="Formulario global para cualquier prenda: franela, camiseta, pantalón, short… Puedes sumar y restar piezas. Es 100% tuyo."
+      />
+    );
   }
 
-  // Vista con pestañas: Cuaderno Digital primero, Marcación de Atados segundo
+  // Vista con pestañas: Cuaderno Digital (manual) primero, Marcación de Atados segundo
   return (
     <div className="space-y-6">
       <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1">
         <button
           type="button"
-          onClick={() => setTab("cuaderno")}
+          onClick={() => setTab("manual")}
           className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
-            tab === "cuaderno"
+            tab === "manual"
               ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
               : "text-slate-400 hover:text-white"
           }`}
@@ -116,12 +128,41 @@ export default function LogClient({
         >
           ⚙️ Marcación de Atados
         </button>
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setTab("solicitudes")}
+            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+              tab === "solicitudes"
+                ? "bg-amber-600 text-white shadow-md shadow-amber-950/50"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            🕊️ Solicitudes ({data.pendingRequests.length})
+          </button>
+        )}
       </div>
 
-      {tab === "cuaderno" && <AffiliatedLogbook data={data} />}
+      {tab === "manual" && (
+        <ManualLogbook
+          storageKey={manualStorageKey}
+          variant={data.role === "satellite_owner" ? "own" : "personal"}
+          title={
+            data.role === "satellite_owner"
+              ? "📖 Mi Producción Propia (Cuaderno del Taller)"
+              : "📖 Cuaderno Digital de Destajo"
+          }
+          subtitle={
+            data.role === "satellite_owner"
+              ? "Anota aquí TU propio trabajo de ensamblaje, además del trabajo de tu equipo en Marcación. Mismo formulario global: sumar, restar, foto y WhatsApp."
+              : "Formulario global para cualquier prenda: franela, camiseta, pantalón, short… Suma o resta piezas con foto y cuenta de cobro."
+          }
+        />
+      )}
       {tab === "marcacion" && (
         <MarkingPanel data={data} preselectedCode={preselectedCode} />
       )}
+      {tab === "solicitudes" && isOwner && <AffiliatedLogbook data={data} />}
     </div>
   );
 }
@@ -653,836 +694,6 @@ function Tooltip({ text }: { text: string }) {
         </span>
       )}
     </span>
-  );
-}
-
-{/* Componente del Cuaderno Digital de Trabajo Personal para Operarios libres */}
-function PersonalLogbook() {
-  const [workType, setWorkType] = useState<"process" | "full">("process");
-  const [prenda, setPrenda] = useState("Jean Dama");
-  const [color, setColor] = useState("Azul Oscuro");
-  const [operacion, setOperacion] = useState("Filete (Cerrar costados)");
-  const [customOp, setCustomOp] = useState("");
-  const [tarifa, setTarifa] = useState("600");
-  const [customQty, setCustomQty] = useState("10");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  // Lista de procesos sugeridos + autocompletables
-  const [processOptions, setProcessOptions] = useState<string[]>([
-    "Filete (Cerrar costados)",
-    "Plana (Poner cuellos)",
-    "Collarín (Dobladillo / Ruedo)",
-    "Presille (Refuerzos)",
-    "Pegar mangas",
-    "Pegar resorte / Pretina",
-    "Pegar bolsillos",
-    "Ensamblado de Prenda Completa",
-  ]);
-
-  const [logs, setLogs] = useState<
-    {
-      id: string;
-      workType: "process" | "full";
-      prenda: string;
-      color: string;
-      operacion: string;
-      tarifa: number;
-      units: number;
-      total: number;
-      formattedDate: string; // ej: Lunes, 15 Oct 2026 · 10:30 AM
-      rawDate: string; // YYYY-MM-DD
-      image?: string | null;
-    }[]
-  >(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("coretextil_personal_logs");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-    return [];
-  });
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  // Calcular fecha de inicio de esta semana (lunes)
-  const getStartOfWeek = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    return monday.toISOString().slice(0, 10);
-  };
-
-  // Estados para filtro y liquidación por período de cobro
-  const [startDate, setStartDate] = useState<string>(getStartOfWeek());
-  const [endDate, setEndDate] = useState<string>(todayStr);
-  const [periodPreset, setPeriodPreset] = useState<"today" | "week" | "fortnight" | "custom">("week");
-
-  // Función para cambiar de preset rápido de liquidación
-  function applyPeriodPreset(preset: "today" | "week" | "fortnight" | "custom") {
-    setPeriodPreset(preset);
-    const now = new Date();
-    if (preset === "today") {
-      setStartDate(todayStr);
-      setEndDate(todayStr);
-    } else if (preset === "week") {
-      setStartDate(getStartOfWeek());
-      setEndDate(todayStr);
-    } else if (preset === "fortnight") {
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      if (now.getDate() <= 15) {
-        setStartDate(`${year}-${month}-01`);
-        setEndDate(`${year}-${month}-15`);
-      } else {
-        const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-        setStartDate(`${year}-${month}-16`);
-        setEndDate(`${year}-${month}-${lastDay}`);
-      }
-    }
-  }
-
-  // Filtrado de logs por rango de fechas de liquidación
-  const periodLogs = useMemo(() => {
-    return logs.filter((l) => {
-      if (!l.rawDate) return true;
-      return l.rawDate >= startDate && l.rawDate <= endDate;
-    });
-  }, [logs, startDate, endDate]);
-
-  const walletPeriod = useMemo(() => periodLogs.reduce((acc, l) => acc + l.total, 0), [periodLogs]);
-  const piecesPeriod = useMemo(() => periodLogs.reduce((acc, l) => acc + l.units, 0), [periodLogs]);
-
-  const todayLogs = useMemo(() => logs.filter((l) => l.rawDate === todayStr), [logs, todayStr]);
-  const walletToday = useMemo(() => todayLogs.reduce((acc, l) => acc + l.total, 0), [todayLogs]);
-  const piecesToday = useMemo(() => todayLogs.reduce((acc, l) => acc + l.units, 0), [todayLogs]);
-
-  // Generador de mensaje de WhatsApp para Cuenta de Cobro del Período
-  function getLiquidationWhatsAppUrl() {
-    let breakdown = "";
-    periodLogs.forEach((l, index) => {
-      breakdown += `${index + 1}. ${l.prenda} (${l.color}) - ${l.operacion}: ${l.units} uds × ${formatCop(l.tarifa)} = ${formatCop(l.total)}\n`;
-    });
-
-    const text = `🧾 *CUENTA DE COBRO FORMAL DE DESTAJO* \n` +
-      `📅 *Período de Corte:* Desde ${startDate} hasta ${endDate}\n\n` +
-      `💰 *TOTAL A COBRAR:* ${formatCop(walletPeriod)}\n` +
-      `🔢 *Total Piezas Confeccionadas:* ${piecesPeriod} uds\n` +
-      `📋 *Registros en Cuaderno:* ${periodLogs.length} lotes/atados\n\n` +
-      `📌 *DESGLOSE DE ACTIVIDADES:*\n` +
-      (breakdown || "Sin registros en este período\n") +
-      `\n---\n` +
-      `💡 *Nota:* Esta cuenta de cobro fue generada automáticamente desde el Cuaderno Digital de CoreTextil.\n` +
-      `Registre su taller gratis para liquidar nómina a 1 clic: https://coretextil.vercel.app`;
-
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-  }
-
-  // Captura de foto opcional
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function addLog(units: number) {
-    const rate = parseFloat(tarifa) || 0;
-    if (units <= 0 || rate <= 0) return;
-
-    // Determinar proceso activo
-    let selectedProc = operacion === "OTRO" ? customOp.trim() : operacion;
-    if (!selectedProc) selectedProc = "Ensamblado General";
-
-    // Si es un nuevo proceso personalizado, añadir a la lista de opciones futuras
-    if (customOp.trim() && !processOptions.includes(customOp.trim())) {
-      setProcessOptions((prev) => [...prev, customOp.trim()]);
-    }
-
-    const now = new Date();
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    const dayName = days[now.getDay()];
-    const dateNum = now.getDate();
-    const monthName = months[now.getMonth()];
-    const year = now.getFullYear();
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-
-    const formattedDate = `${dayName} ${dateNum} de ${monthName} ${year} · ${hours}:${minutes}`;
-
-    const newLog = {
-      id: Date.now().toString(),
-      workType,
-      prenda: prenda || "Prenda General",
-      color: color || "Estándar",
-      operacion: selectedProc,
-      tarifa: rate,
-      units,
-      total: rate * units,
-      formattedDate,
-      rawDate: todayStr,
-      image: imagePreview,
-    };
-
-    const updated = [newLog, ...logs];
-    setLogs(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("coretextil_personal_logs", JSON.stringify(updated));
-    }
-    setImagePreview(null);
-    if (operacion === "OTRO") setCustomOp("");
-  }
-
-  function clearLogs() {
-    if (confirm("¿Deseas reiniciar las notas de tu cuaderno personal?")) {
-      setLogs([]);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("coretextil_personal_logs");
-      }
-    }
-  }
-
-  // Persistencia helper
-  function persistLogs(next: typeof logs) {
-    setLogs(next);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("coretextil_personal_logs", JSON.stringify(next));
-    }
-  }
-
-  // Edición libre del cuaderno personal: ajusta cantidad, recalcula total
-  function updateLogUnits(id: string, units: number) {
-    if (!Number.isFinite(units) || units <= 0) return;
-    persistLogs(
-      logs.map((l) =>
-        l.id === id ? { ...l, units, total: Math.round(l.tarifa * units) } : l
-      )
-    );
-  }
-
-  // Eliminar una anotación propia del cuaderno personal
-  function deleteLog(id: string) {
-    if (!confirm("¿Eliminar esta anotación de tu cuaderno personal?")) return;
-    persistLogs(logs.filter((l) => l.id !== id));
-  }
-
-  // Vista de iconos compactos alternable
-  const [compactView, setCompactView] = useState(false);
-
-  // Estado para el modal de Ticket de Novedades por WhatsApp
-  const [showTicketModal, setShowTicketModal] = useState(false);
-  const [ticketReason, setTicketReason] = useState<"missing_piece" | "damaged_fabric" | "quality_return">("missing_piece");
-  const [ticketPrenda, setTicketPrenda] = useState("Jean Dama");
-  const [ticketQty, setTicketQty] = useState("5");
-  const [ticketNotes, setTicketNotes] = useState("Faltan bolsillos traseros en el atado");
-
-  function getTicketWhatsAppUrl() {
-    const reasonLabels = {
-      missing_piece: "⚠️ Pieza Faltante en Atado",
-      damaged_fabric: "✂️ Tela Dañada / Defectuosa",
-      quality_return: "🔍 Devolución por Control de Calidad (Reproceso)",
-    };
-
-    const now = new Date();
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const dayName = days[now.getDay()];
-    const dateStr = `${dayName} ${now.getDate()} de ${now.getFullYear()} · ${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
-
-    const ticketCode = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const text = `🚨 *TICKET FORMAL DE NOVEDAD DE CONFECCIÓN* (${ticketCode})\n\n` +
-      `📌 *Prenda / Ref:* ${ticketPrenda}\n` +
-      `📋 *Motivo / Novedad:* ${reasonLabels[ticketReason]}\n` +
-      `🔢 *Cantidad Afectada:* ${ticketQty} unidades\n` +
-      `📅 *Fecha y Hora:* ${dateStr}\n` +
-      `📝 *Observaciones:* ${ticketNotes || "Sin observaciones adicionales"}\n\n` +
-      `---\n` +
-      `💡 *Nota:* Este ticket fue generado desde el Cuaderno Digital de CoreTextil. Para gestionar atados, reposiciones de faltantes y nómina a 1 clic, registre su taller gratis en: https://coretextil.vercel.app`;
-
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-  }
-
-  const shareText = `Hola Don Carlos, estoy usando el Cuaderno Digital de CoreTextil para llevar las cuentas de mi destajo. Registre su taller gratis en https://coretextil.vercel.app para que la nómina de todos salga lista a 1 clic.`;
-
-  return (
-    <div className="space-y-6">
-      {/* Cabecera Billetera Personal */}
-      <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-5 backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
-              📖 Mi Cuaderno Digital de Destajo (Uso Personal)
-              <Tooltip text="Herramienta gratuita e independiente para anotar la producción diaria que cose un operario sin necesidad de estar registrado formalmente en un taller satélite." />
-              <a
-                href="/dashboard/operario/juego"
-                className="ml-1 rounded-full border border-amber-500/40 bg-amber-950/50 px-2 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-900"
-              >
-                🎮 Aprende jugando
-              </a>
-            </span>
-            <h2 className="mt-1 text-2xl font-extrabold text-slate-100">
-              Billetera Personal del Día
-            </h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowTicketModal(false)}
-                type="button"
-                className="hidden"
-              />
-              <button
-                onClick={() => setShowTicketModal(true)}
-                className="rounded-xl border border-amber-500/40 bg-amber-950/60 px-4 py-2 text-xs font-bold text-amber-300 transition hover:bg-amber-900 flex items-center gap-1"
-              >
-                🚨 Generar Ticket WhatsApp
-              </button>
-              <Tooltip text="Genera un reporte formal con código único en WhatsApp para notificar piezas faltantes, tela defectuosa o devoluciones de calidad a tu taller o marca." />
-            </div>
-
-            <div className="flex items-center">
-              <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-950/40"
-              >
-                📲 Invitar a mi taller satélite
-              </a>
-              <Tooltip text="Envía una invitación directa por WhatsApp al dueño o encargado de tu taller para que conozca CoreTextil y pague la nómina a 1 clic." />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-slate-900/80 p-4 border border-slate-800">
-          <div>
-            <p className="text-xs text-slate-400 flex items-center">
-              Ganado Hoy ($ COP)
-              <Tooltip text="Cálculo automático de tus ingresos acumulados hoy: suma de (Tarifa por pieza × Cantidad de piezas confeccionadas)." />
-            </p>
-            <p className="text-3xl font-extrabold text-emerald-400">
-              {formatCop(walletToday)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-400 flex items-center">
-              Piezas Contadas Hoy
-              <Tooltip text="Cantidad total de unidades físicas de confección que has sumado a tu cuaderno durante el día de hoy." />
-            </p>
-            <p className="text-3xl font-extrabold text-cyan-300">
-              {piecesToday} <span className="text-sm font-normal text-slate-400">uds</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Calculadora y Cierre de Liquidación por Período de Cobro */}
-      <div className="rounded-2xl border border-cyan-500/40 bg-slate-900/80 p-6 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
-          <div>
-            <h3 className="font-extrabold text-slate-100 flex items-center text-lg">
-              🧮 Calculadora & Cierre de Liquidación (Fecha de Corte)
-              <Tooltip text="Selecciona la fecha de inicio y la fecha de corte para sumar automáticamente lo cosido durante esa semana, quincena o rango personalizado y generar tu cuenta de cobro." />
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Filtra tus cuentas por semana o quincena sin perder el historial anterior.
-            </p>
-          </div>
-
-          {/* Selector de Presets Rápido */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => applyPeriodPreset("today")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-                periodPreset === "today"
-                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
-                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
-              }`}
-            >
-              📅 Hoy
-            </button>
-            <button
-              onClick={() => applyPeriodPreset("week")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-                periodPreset === "week"
-                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
-                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
-              }`}
-            >
-              🗓️ Esta Semana
-            </button>
-            <button
-              onClick={() => applyPeriodPreset("fortnight")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-                periodPreset === "fortnight"
-                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
-                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
-              }`}
-            >
-              📆 Esta Quincena
-            </button>
-            <button
-              onClick={() => setPeriodPreset("custom")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-                periodPreset === "custom"
-                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
-                  : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
-              }`}
-            >
-              ✏️ Personalizado
-            </button>
-          </div>
-        </div>
-
-        {/* Rango de Fechas (Inicio / Fin) */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-end">
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Fecha de Inicio (Conteo)
-              <Tooltip text="Día en que comenzaste a coser este lote o quincena." />
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPeriodPreset("custom");
-              }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Fecha de Cierre (Liquidación)
-              <Tooltip text="Día límite o fecha de cobro para calcular el total ganado." />
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPeriodPreset("custom");
-              }}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <a
-              href={getLiquidationWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full text-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition active:scale-95 flex items-center justify-center gap-1.5"
-            >
-              📲 Enviar Cuenta de Cobro por WhatsApp
-            </a>
-            <Tooltip text="Genera y envía un mensaje listo por WhatsApp con la cuenta de cobro detallada del período seleccionado." />
-          </div>
-        </div>
-
-        {/* Resumen de Liquidación del Período */}
-        <div className="grid grid-cols-3 gap-3 rounded-xl bg-slate-950 p-4 border border-cyan-500/20">
-          <div>
-            <p className="text-[11px] text-slate-400 flex items-center">
-              Total a Cobrar en Período
-              <Tooltip text="Suma total en pesos colombianos ($ COP) de todas las prendas registradas entre la fecha de inicio y la fecha de cierre." />
-            </p>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
-              {formatCop(walletPeriod)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-slate-400 flex items-center">
-              Piezas en Período
-              <Tooltip text="Cantidad total de piezas cosidas en el rango de fechas seleccionado." />
-            </p>
-            <p className="text-2xl sm:text-3xl font-black text-cyan-300 mt-0.5">
-              {piecesPeriod} <span className="text-xs font-normal text-slate-400">uds</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-slate-400 flex items-center">
-              Anotaciones / Lotes
-              <Tooltip text="Número de registros o marcaciones realizadas en el cuaderno dentro de las fechas elegidas." />
-            </p>
-            <p className="text-2xl sm:text-3xl font-black text-amber-300 mt-0.5">
-              {periodLogs.length} <span className="text-xs font-normal text-slate-400">ítems</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Formulario de registro rápido personal */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-bold text-slate-200 flex items-center">
-            Anotar Producción en mi Cuaderno
-            <Tooltip text="Registra cada lote o cantidad de prendas producidas en tu jornada. La aplicación estampa la fecha, el día y la hora automáticamente." />
-          </h3>
-          <div className="flex items-center gap-1">
-            <div className="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
-              <button
-                onClick={() => setWorkType("process")}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  workType === "process" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                ⚙️ Por Proceso / Pieza
-              </button>
-              <button
-                onClick={() => setWorkType("full")}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  workType === "full" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                👕 Prenda Completa
-              </button>
-            </div>
-            <Tooltip text="Modo 'Por Proceso': cuando te pagan por operaciones específicas (Filete, Collarín, Plana). Modo 'Prenda Completa': cuando confeccionas la prenda de principio a fin." />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Prenda / Referencia
-              <Tooltip text="Escribe el nombre o referencia del modelo que estás cosiendo (ej: Jean Dama, Camiseta Polo, Pantalón Dril)." />
-            </label>
-            <input
-              type="text"
-              value={prenda}
-              onChange={(e) => setPrenda(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-              placeholder="Ej: Jean Dama"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Color de Prenda
-              <Tooltip text="Indica el tono o color del lote para identificar y agrupar atados (ej: Azul Oscuro, Negro, Marfil)." />
-            </label>
-            <input
-              type="text"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-              placeholder="Ej: Azul Oscuro, Negro"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Operación / Proceso
-              <Tooltip text="Selecciona la operación de costura o máquina utilizada. Si tu proceso no figura en la lista, selecciona 'Otro proceso' para escribirlo a mano." />
-            </label>
-            <select
-              value={operacion}
-              onChange={(e) => setOperacion(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-            >
-              {processOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-              <option value="OTRO">✏️ Otro proceso (Personalizado)...</option>
-            </select>
-            {operacion === "OTRO" && (
-              <input
-                type="text"
-                value={customOp}
-                onChange={(e) => setCustomOp(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-cyan-500/50 bg-slate-950 px-3 py-1.5 text-xs text-slate-100"
-                placeholder="Escribe el nombre del proceso..."
-              />
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center">
-              Tarifa por Pieza ($ COP)
-              <Tooltip text="El pago en pesos colombianos acordado por cada unidad o pieza terminada en esa operación." />
-            </label>
-            <input
-              type="number"
-              value={tarifa}
-              onChange={(e) => setTarifa(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
-              placeholder="Ej: 600"
-            />
-          </div>
-        </div>
-
-        {/* Foto de referencia opcional */}
-        <div className="flex items-center gap-4 pt-1">
-          <label className="cursor-pointer rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-500 flex items-center">
-            📷 {imagePreview ? "Cambiar foto de referencia" : "Adjuntar foto opcional"}
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-          </label>
-          <Tooltip text="Puedes tomar una foto del atado, la tiqueta o la prenda como comprobante visual guardado en tu cuaderno digital." />
-          {imagePreview && (
-            <div className="flex items-center gap-2">
-              <img src={imagePreview} alt="Preview" className="h-8 w-8 rounded-lg object-cover border border-slate-700" />
-              <button onClick={() => setImagePreview(null)} className="text-xs text-red-400 hover:underline">
-                Quitar
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Botones de marcación rápida */}
-        <div className="pt-2">
-          <p className="text-xs text-slate-400 mb-2 flex items-center">
-            Sumar Piezas a mi Billetera Personal:
-            <Tooltip text="Toca cualquiera de los botones (+10, +25, +50, +100) para acumular piezas de inmediato o escribe la cantidad exacta y pulsa '+ Sumar'." />
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            {[10, 25, 50, 100].map((qty) => (
-              <button
-                key={qty}
-                onClick={() => addLog(qty)}
-                className="flex-1 sm:flex-none rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-500 active:scale-95"
-              >
-                +{qty} piezas
-              </button>
-            ))}
-
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={customQty}
-                onChange={(e) => setCustomQty(e.target.value)}
-                className="w-20 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 text-center"
-              />
-              <button
-                onClick={() => addLog(parseInt(customQty) || 0)}
-                className="rounded-xl border border-cyan-500/40 bg-cyan-950/60 px-4 py-2 text-sm font-semibold text-cyan-300 hover:bg-cyan-900"
-              >
-                + Sumar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Historial de mi Cuaderno */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h3 className="font-bold text-slate-200 flex items-center">
-            Historial de mi Cuaderno ({periodPreset === "week" ? "Esta Semana" : periodPreset === "fortnight" ? "Esta Quincena" : periodPreset === "today" ? "Hoy" : "Rango Seleccionado"})
-            <Tooltip text="Muestra las anotaciones dentro del período de liquidación seleccionado. Se almacena localmente en tu teléfono o navegador. Puedes corregir o eliminar tus propias anotaciones: es tu cuaderno personal." />
-          </h3>
-          <div className="flex items-center gap-3">
-            {periodLogs.length > 0 && (
-              <button
-                onClick={() => setCompactView((v) => !v)}
-                className="rounded-lg border border-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-300 hover:border-cyan-500 hover:text-cyan-300 transition"
-                title="Alternar vista detallada / iconos compactos"
-              >
-                {compactView ? "📋 Detalle" : "🔲 Iconos"}
-              </button>
-            )}
-            {logs.length > 0 && (
-              <button
-                onClick={clearLogs}
-                className="text-xs text-slate-500 hover:text-red-400 transition"
-              >
-                Limpiar cuaderno
-              </button>
-            )}
-          </div>
-        </div>
-
-        {periodLogs.length === 0 ? (
-          <p className="text-xs text-slate-500 py-4 text-center">
-            No hay anotaciones registradas en las fechas seleccionadas ({startDate} a {endDate}). Añade prendas producidas arriba.
-          </p>
-        ) : compactView ? (
-          /* Vista de iconos pequeños: prenda, piezas y total al tacto */
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 max-h-80 overflow-y-auto">
-            {periodLogs.map((l) => (
-              <button
-                key={l.id}
-                type="button"
-                onClick={() => {
-                  if (confirm(`${l.prenda} (${l.color}) · ${l.operacion}\n${l.units} piezas · +${formatCop(l.total)}\n${l.formattedDate}\n\n¿Eliminar esta anotación?`)) {
-                    deleteLog(l.id);
-                  }
-                }}
-                className="flex flex-col items-center rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 text-center transition hover:border-cyan-500"
-                title="Toca para ver el detalle o mantener pulsado para opciones"
-              >
-                <span className="text-2xl" aria-hidden>
-                  {l.workType === "full" ? "👕" : "🧵"}
-                </span>
-                <span className="mt-1 w-full truncate text-[11px] font-bold text-slate-200">{l.prenda}</span>
-                <span className="text-[10px] text-cyan-300">{l.units} pzs</span>
-                <span className="text-[10px] font-bold text-emerald-400">+{formatCop(l.total)}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-2.5 max-h-80 overflow-y-auto">
-            {periodLogs.map((l) => (
-              <div
-                key={l.id}
-                className="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 text-xs gap-3"
-              >
-                <div className="flex items-center gap-3">
-                  {l.image && (
-                    <img src={l.image} alt={l.prenda} className="h-10 w-10 rounded-lg object-cover border border-slate-800" />
-                  )}
-                  <div>
-                    <p className="font-semibold text-slate-200">
-                      {l.prenda} ({l.color}) · <span className="text-cyan-300">{l.operacion}</span>
-                    </p>
-                    <p className="text-slate-500 text-[11px]">{l.formattedDate} · Tarifa: {formatCop(l.tarifa)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-right">
-                  <div>
-                    <p className="font-extrabold text-emerald-400 text-sm">+{formatCop(l.total)}</p>
-                    <p className="text-slate-400 font-medium">{l.units} piezas</p>
-                  </div>
-                  {/* Cuaderno personal: edición libre inmediata */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = prompt(
-                        `Cantidad correcta de piezas para «${l.prenda} · ${l.operacion}» (actual: ${l.units}):`,
-                        String(l.units)
-                      );
-                      if (input !== null) updateLogUnits(l.id, parseInt(input) || 0);
-                    }}
-                    className="rounded-lg border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-cyan-950"
-                    title="Corregir la cantidad de esta anotación"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteLog(l.id)}
-                    className="rounded-lg border border-red-500/40 px-2 py-0.5 text-[10px] font-bold text-red-300 hover:bg-red-950"
-                    title="Eliminar esta anotación"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Modal Generador de Ticket WhatsApp */}
-      {showTicketModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-slate-100 flex items-center gap-2">
-                🚨 Generar Ticket Formal de Novedad
-                <Tooltip text="Reporte estructurado para notificar problemas de confección a tu taller o marca con fecha y número de ticket formal." />
-              </h3>
-              <button
-                onClick={() => setShowTicketModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1 flex items-center">
-                  Prenda / Referencia
-                  <Tooltip text="Indica la referencia exacta de la prenda que tiene la novedad." />
-                </label>
-                <input
-                  type="text"
-                  value={ticketPrenda}
-                  onChange={(e) => setTicketPrenda(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
-                  placeholder="Ej: Jean Dama Azul"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1 flex items-center">
-                  Motivo de Novedad / Problema
-                  <Tooltip text="Clasifica la novedad: Piezas faltantes en el atado cortado, tela defectuosa de corte, o prendas devueltas para desbaratar y corregir en costura." />
-                </label>
-                <select
-                  value={ticketReason}
-                  onChange={(e) => setTicketReason(e.target.value as any)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
-                >
-                  <option value="missing_piece">⚠️ Pieza Faltante en Atado (Ej: Faltan bolsillos, mangas)</option>
-                  <option value="damaged_fabric">✂️ Tela Dañada / Defectuosa de fábrica</option>
-                  <option value="quality_return">🔍 Devolución por Control de Calidad (Reproceso de costura)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1 flex items-center">
-                    Cantidad de Piezas Afectadas
-                    <Tooltip text="Número exacto de unidades involucradas en este reporte de novedad." />
-                  </label>
-                  <input
-                    type="number"
-                    value={ticketQty}
-                    onChange={(e) => setTicketQty(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1 flex items-center">
-                  Observaciones / Detalle
-                  <Tooltip text="Agrega detalles o instrucciones específicas para la persona que leerá este ticket en WhatsApp." />
-                </label>
-                <textarea
-                  value={ticketNotes}
-                  onChange={(e) => setTicketNotes(e.target.value)}
-                  rows={2}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-cyan-500 focus:outline-none"
-                  placeholder="Describe el defecto o pieza faltante..."
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col gap-2">
-              <a
-                href={getTicketWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setShowTicketModal(false)}
-                className="w-full text-center rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500"
-              >
-                📲 Enviar Ticket Formal por WhatsApp
-              </a>
-              <button
-                onClick={() => setShowTicketModal(false)}
-                className="w-full text-center rounded-xl border border-slate-800 py-2 text-xs text-slate-400 hover:text-white"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }
 

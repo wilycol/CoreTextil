@@ -5,15 +5,23 @@ import NominaClient, { type NominaData } from "./NominaClient";
 
 export default async function NominaPage() {
   const { profile } = await getSession();
-  if (profile.role !== "satellite_owner") redirect("/dashboard");
+  if (profile.role !== "satellite_owner" && profile.role !== "superadmin")
+    redirect("/dashboard");
 
   const supabase = await createClient();
 
-  // Operarios de mi taller
-  const { data: team } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .eq("satellite_owner_id", profile.id);
+  // Operarios de mi taller (superadmin: ve a todos los operarios vinculados)
+  const { data: team } = profile.role === "superadmin"
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "operator")
+        .not("satellite_owner_id", "is", null)
+        .limit(200)
+    : await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("satellite_owner_id", profile.id);
 
   const teamRows = (team ?? []) as { id: string; full_name: string }[];
 

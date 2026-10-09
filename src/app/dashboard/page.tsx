@@ -142,6 +142,16 @@ const OPERATOR_CARDS: Card[] = [
 
 const SUPERADMIN_CARDS: Card[] = [
   {
+    href: "/dashboard/operario",
+    title: "📖 Cuaderno Digital (vista equipo)",
+    text: "Vista omnipresente del cuaderno: anotaciones de todo el equipo, solicitudes de corrección y marcación de atados sin restricción de taller.",
+  },
+  {
+    href: "/dashboard/escanear",
+    title: "Escanear atado (QR)",
+    text: "Escáner disponible también para administración: recibir bultos o validar códigos de atado del piloto.",
+  },
+  {
     href: "/dashboard/soporte",
     title: "👑 Mesa de Control SuperAdmin",
     text: "Administra tickets de soporte, responde sugerencias, revisa capturas de pantalla y analiza feedback del piloto.",
