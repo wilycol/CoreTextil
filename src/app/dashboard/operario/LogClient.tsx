@@ -5,6 +5,7 @@ import { formatCop } from "@/lib/cop";
 import { logProduction } from "./actions";
 import { requestChangeAction, decideChangeAction } from "./changeActions";
 import ManualLogbook from "./ManualLogbook";
+import type { ManualLog } from "./ManualLogbook";
 
 export type LogRow = {
   id: string;
@@ -96,7 +97,7 @@ export default function LogClient({
       <ManualLogbook
         storageKey={manualStorageKey}
         variant="personal"
-        title="📖 Mi Cuaderno de Destajo (Uso Personal)"
+        title="📖 Mi Cuaderno Digital V2 (Uso Personal)"
         subtitle="Formulario global para cualquier prenda: franela, camiseta, pantalón, short… Puedes sumar y restar piezas. Es 100% tuyo."
       />
     );
