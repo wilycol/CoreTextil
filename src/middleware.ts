@@ -30,13 +30,24 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const isStaticFile =
+    pathname.includes(".") &&
+    /\.(png|jpe?g|webp|gif|svg|ico|mp4|webm|webmanifest|json|css|js)$/i.test(pathname);
+
   const isPublic =
     pathname === "/" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/pitch_deck") ||
+    pathname.startsWith("/media") ||
+    pathname.startsWith("/photo_guides") ||
+    pathname.startsWith("/icons") ||
     pathname === "/manifest.webmanifest" ||
     pathname === "/favicon.ico" ||
-    pathname.startsWith("/icons");
+    pathname === "/icon.png" ||
+    pathname === "/logo.png" ||
+    pathname === "/sw.js" ||
+    isStaticFile;
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -61,6 +72,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons|sw\\.js).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons|pitch_deck|media|photo_guides|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

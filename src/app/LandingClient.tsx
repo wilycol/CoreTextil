@@ -47,7 +47,7 @@ export default function LandingClient() {
   const [isRotated, setIsRotated] = useState(false);
   const [demoPreset, setDemoPreset] = useState<"in_progress" | "bottleneck" | "completed" | "pending">("in_progress");
 
-  const slides = Array.from({ length: 12 }, (_, i) => `/pitch_deck/slide_${i + 1}.png`);
+  const slides = Array.from({ length: 12 }, (_, i) => `/pitch_deck/slide_${i + 1}.webp`);
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(PROMPT_MASTER_TEXT);
@@ -187,6 +187,8 @@ export default function LandingClient() {
           <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
             <video
               controls
+              playsInline
+              preload="metadata"
               className="w-full aspect-video rounded-2xl object-cover"
               poster="/logo.png"
             >
