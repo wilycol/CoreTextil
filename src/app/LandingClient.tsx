@@ -4,6 +4,38 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { BRAND_PLANS, SATELLITE_PLANS } from "@/lib/branding";
+import GarmentAssemblyViewer2D, { type OperationProgress } from "@/components/GarmentAssemblyViewer2D";
+
+const DEMO_PRESETS: Record<string, OperationProgress[]> = {
+  in_progress: [
+    { id: "op-1", stepOrder: 1, operationName: "Unir hombros con fileteadora", machineType: "fileteadora", rateCop: 450, samMinutes: 0.5, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-2", stepOrder: 2, operationName: "Pegar cuello rib y sesgo en collarín", machineType: "collarin", rateCop: 750, samMinutes: 0.8, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-3", stepOrder: 3, operationName: "Pegar mangas a sisa (en máquina)", machineType: "fileteadora", rateCop: 950, samMinutes: 1.0, unitsCompleted: 60, totalUnits: 100 },
+    { id: "op-4", stepOrder: 4, operationName: "Cerrar costados y bajo-manga", machineType: "fileteadora", rateCop: 1100, samMinutes: 1.2, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-5", stepOrder: 5, operationName: "Dobladillar ruedo inferior en collarín", machineType: "collarin", rateCop: 900, samMinutes: 1.5, unitsCompleted: 0, totalUnits: 100 },
+  ],
+  bottleneck: [
+    { id: "op-1", stepOrder: 1, operationName: "Unir hombros con fileteadora", machineType: "fileteadora", rateCop: 450, samMinutes: 0.5, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-2", stepOrder: 2, operationName: "Pegar cuello rib y sesgo en collarín", machineType: "collarin", rateCop: 750, samMinutes: 0.8, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-3", stepOrder: 3, operationName: "Pegar mangas a sisa (Cuello de Botella)", machineType: "fileteadora", rateCop: 950, samMinutes: 1.0, unitsCompleted: 20, totalUnits: 100, hasAlert: true },
+    { id: "op-4", stepOrder: 4, operationName: "Cerrar costados y bajo-manga", machineType: "fileteadora", rateCop: 1100, samMinutes: 1.2, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-5", stepOrder: 5, operationName: "Dobladillar ruedo inferior en collarín", machineType: "collarin", rateCop: 900, samMinutes: 1.5, unitsCompleted: 0, totalUnits: 100 },
+  ],
+  completed: [
+    { id: "op-1", stepOrder: 1, operationName: "Unir hombros con fileteadora", machineType: "fileteadora", rateCop: 450, samMinutes: 0.5, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-2", stepOrder: 2, operationName: "Pegar cuello rib y sesgo en collarín", machineType: "collarin", rateCop: 750, samMinutes: 0.8, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-3", stepOrder: 3, operationName: "Pegar mangas a sisa", machineType: "fileteadora", rateCop: 950, samMinutes: 1.0, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-4", stepOrder: 4, operationName: "Cerrar costados y bajo-manga", machineType: "fileteadora", rateCop: 1100, samMinutes: 1.2, unitsCompleted: 100, totalUnits: 100 },
+    { id: "op-5", stepOrder: 5, operationName: "Dobladillar ruedo inferior en collarín", machineType: "collarin", rateCop: 900, samMinutes: 1.5, unitsCompleted: 100, totalUnits: 100 },
+  ],
+  pending: [
+    { id: "op-1", stepOrder: 1, operationName: "Unir hombros con fileteadora", machineType: "fileteadora", rateCop: 450, samMinutes: 0.5, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-2", stepOrder: 2, operationName: "Pegar cuello rib y sesgo en collarín", machineType: "collarin", rateCop: 750, samMinutes: 0.8, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-3", stepOrder: 3, operationName: "Pegar mangas a sisa", machineType: "fileteadora", rateCop: 950, samMinutes: 1.0, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-4", stepOrder: 4, operationName: "Cerrar costados y bajo-manga", machineType: "fileteadora", rateCop: 1100, samMinutes: 1.2, unitsCompleted: 0, totalUnits: 100 },
+    { id: "op-5", stepOrder: 5, operationName: "Dobladillar ruedo inferior en collarín", machineType: "collarin", rateCop: 900, samMinutes: 1.5, unitsCompleted: 0, totalUnits: 100 },
+  ],
+};
 
 const PROMPT_MASTER_TEXT = `Actúa como Diseñador Técnico Textil y Patronista Industrial de CoreTextil. Analiza las imágenes adjuntas de esta prenda y genera la ficha técnica completa y el ADN con el siguiente desglose: 1) Ficha técnica general (tipo de prenda, género, silueta, materiales), 2) Lista detallada de piezas cortadas y consumo de insumos por unidad, 3) Tabla de medidas por talla (XS a XL), 4) Árbol secuencial de procesos de ensamble (Corte, Filete, Plana, Collarín, Presille, Pulido) con estimación de tiempo en segundos y costo sugerido por operación.`;
 
@@ -13,6 +45,7 @@ export default function LandingClient() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRotated, setIsRotated] = useState(false);
+  const [demoPreset, setDemoPreset] = useState<"in_progress" | "bottleneck" | "completed" | "pending">("in_progress");
 
   const slides = Array.from({ length: 12 }, (_, i) => `/pitch_deck/slide_${i + 1}.png`);
 
@@ -122,8 +155,14 @@ export default function LandingClient() {
             Empezar gratis
           </Link>
           <a
+            href="#gemelo-digital"
+            className="rounded-xl border border-cyan-500/50 bg-cyan-950/40 px-6 py-3.5 text-base font-semibold text-cyan-300 backdrop-blur transition hover:border-cyan-400 hover:bg-cyan-900/60 shadow-lg shadow-cyan-950/50 flex items-center gap-2"
+          >
+            <span>✨</span> Probar Gemelo 2D en Vivo
+          </a>
+          <a
             href="#video-oficial"
-            className="rounded-xl border border-slate-700 bg-slate-900/60 px-7 py-3.5 text-base font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-500/50 hover:bg-slate-800"
+            className="rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3.5 text-base font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-500/50 hover:bg-slate-800"
           >
             🎥 Ver Video Demo
           </a>
@@ -467,6 +506,115 @@ export default function LandingClient() {
                   ✨ Ficha Técnica Lista
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección Innovación Exclusiva: Gemelo Digital Textil 2D */}
+      <section id="gemelo-digital" className="relative z-10 border-t border-cyan-500/30 bg-gradient-to-b from-slate-950 via-cyan-950/20 to-slate-950 py-24 backdrop-blur overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/40 bg-cyan-950/80 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-cyan-300 shadow-lg shadow-cyan-950/60">
+              ✨ Innovación Exclusiva · Telemetría Textil 2D
+            </span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl text-white">
+              El <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">Gemelo Digital</span> de la Prenda
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-base text-slate-300 leading-relaxed">
+              Adiós a las hojas de cálculo ciegas y los partes de producción manuales. Con CoreTextil, cada atado que sale de la mesa de corte tiene su propio <strong>informe visual en 2D interactivo</strong>. La silueta técnica se ilumina automáticamente en tiempo real según las operaciones que completan tus operarios en planta.
+            </p>
+          </div>
+
+          {/* Selector interactivo de simulación para el cliente */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+            <span className="text-xs font-semibold text-slate-400 mr-2 flex items-center gap-1.5">
+              <span>🎮</span> Simula el avance en planta:
+            </span>
+            <button
+              onClick={() => setDemoPreset("in_progress")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-md ${
+                demoPreset === "in_progress"
+                  ? "bg-amber-500 text-slate-950 shadow-amber-500/20 scale-105"
+                  : "bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              🟡 En Ensamble Activo (64%)
+            </button>
+            <button
+              onClick={() => setDemoPreset("bottleneck")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-md ${
+                demoPreset === "bottleneck"
+                  ? "bg-rose-500 text-white shadow-rose-500/20 scale-105 animate-pulse"
+                  : "bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              🚨 Alerta Cuello de Botella
+            </button>
+            <button
+              onClick={() => setDemoPreset("completed")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-md ${
+                demoPreset === "completed"
+                  ? "bg-emerald-500 text-slate-950 shadow-emerald-500/20 scale-105"
+                  : "bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              🟢 Lote 100% Confeccionado
+            </button>
+            <button
+              onClick={() => setDemoPreset("pending")}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-md ${
+                demoPreset === "pending"
+                  ? "bg-slate-700 text-white shadow-slate-700/20 scale-105"
+                  : "bg-slate-900 border border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              ⚪ Atado Recién Cortado (0%)
+            </button>
+          </div>
+
+          {/* Componente del Visor 2D Montado en Vivo */}
+          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/90 p-4 sm:p-8 shadow-2xl backdrop-blur">
+            <GarmentAssemblyViewer2D
+              garmentName="Camiseta Polo Piqué Industrial"
+              referenceCode="REF-POLO-PRO-2026"
+              totalOrderUnits={100}
+              operations={DEMO_PRESETS[demoPreset]}
+            />
+          </div>
+
+          {/* 4 Pilares del Gemelo Digital para Vender a Fábricas y Diseñadores */}
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur">
+              <span className="text-2xl">🚦</span>
+              <h3 className="mt-3 text-base font-bold text-white">Semáforo de Costura</h3>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Costuras coloreadas por estado: 🟢 Verde (100% terminada), 🟡 Amarillo (en máquina), ⚪ Gris (pendiente) y 🔴 Rojo (alerta o cuello de botella).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur">
+              <span className="text-2xl">🛡️</span>
+              <h3 className="mt-3 text-base font-bold text-white">Grafo de Secuencia Lógico</h3>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Control de calidad estructural: el operario no puede cerrar costados si antes no ha unido hombros y pegado mangas en la línea.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur">
+              <span className="text-2xl">📱</span>
+              <h3 className="mt-3 text-base font-bold text-white">QR de Atado en Máquina</h3>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                El costurero escanea con su móvil el tiquete de cartón del atado y pica las piezas con botones táctiles rápidos (+10, +25, Todo el atado).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur">
+              <span className="text-2xl">⏱️</span>
+              <h3 className="mt-3 text-base font-bold text-white">Auditoría SAM y Destajo</h3>
+              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                Cada pieza procesada liquida la tarifa pactada al operario en tiempo real y calcula los minutos estándar SAM de la orden sin errores.
+              </p>
             </div>
           </div>
         </div>
