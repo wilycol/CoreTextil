@@ -119,6 +119,11 @@ const FACTORY_CARDS: Card[] = [
 
 const SATELLITE_CARDS: Card[] = [
   {
+    href: "/dashboard/nueva-prenda",
+    title: "✨ Ingreso de Lote con IA",
+    text: "Toma foto a una prenda de muestra de un cliente externo y obtén su despiece y tiempos SAM (2 análisis/semana).",
+  },
+  {
     href: "/dashboard/operario",
     title: "📖 Cuaderno Digital",
     text: "Tu billetera del día, el historial de anotaciones y las solicitudes de corrección de tu equipo. Primera herramienta del taller.",
@@ -166,6 +171,11 @@ const SATELLITE_CARDS: Card[] = [
 ];
 
 const OPERATOR_CARDS: Card[] = [
+  {
+    href: "/dashboard/nueva-prenda",
+    title: "✨ Despiece de Prenda con IA",
+    text: "Toma foto a la prenda y descubre su secuencia de operaciones y tiempos estándar (2 análisis/semana).",
+  },
   {
     href: "/dashboard/operario",
     title: "📖 Cuaderno Digital",

@@ -5,8 +5,50 @@ import { createClient } from "@/lib/supabase/server";
 import { inferGarmentDNA } from "@/lib/ai";
 import { runExplodeGarment } from "@/lib/services/explode";
 import { createOrderCore, requireProfile } from "@/lib/services/orders";
+import { checkAIQuota, recordAIUsage } from "@/lib/services/aiQuota";
 
 type Result = { ok: true } | { ok: false; error: string };
+
+// ---------- Análisis de Visión con IA (Gemini con Cuotas) ----------
+export async function analyzeGarmentWithAI(input: {
+  imageBase64: string;
+  mimeType: string;
+  referenceCode: string;
+  baseRateCop: number;
+  hintName?: string;
+}): Promise<
+  | { ok: true; dna: any; remaining: number | "unlimited" }
+  | { ok: false; error: string }
+> {
+  const profile = await requireProfile();
+  if (!profile) return { ok: false, error: "Sesión expirada." };
+
+  const quota = await checkAIQuota(profile);
+  if (!quota.allowed) {
+    return { ok: false, error: quota.reason || "Has alcanzado tu cuota semanal de IA." };
+  }
+
+  const res = await runExplodeGarment({
+    imageBase64: input.imageBase64,
+    mimeType: input.mimeType,
+    referenceCode: input.referenceCode,
+    baseRateCop: input.baseRateCop,
+    hintName: input.hintName,
+  });
+
+  if (!res.ok) {
+    return { ok: false, error: res.error };
+  }
+
+  await recordAIUsage(profile, "vision_explode");
+  const updatedQuota = await checkAIQuota(profile);
+
+  return {
+    ok: true,
+    dna: res.dna,
+    remaining: updatedQuota.remaining,
+  };
+}
 
 // ---------- Llamada a Motor de Visión (Colab Worker) ----------
 export async function runColabVision(input: {
@@ -104,8 +146,17 @@ export async function createGarment(input: {
   if (!user) return { ok: false, error: "Sesión expirada." };
 
   const profile = await requireProfile();
-  if (!profile?.tenant_id) {
-    return { ok: false, error: "Completa el onboarding de tu marca." };
+  if (!profile) return { ok: false, error: "Perfil no encontrado." };
+
+  if (!profile.tenant_id) {
+    const tenantId = crypto.randomUUID();
+    const workspaceName =
+      profile.role === "satellite_owner"
+        ? `Taller Satélite ${user.user_metadata?.full_name || profile.id.slice(0, 6)}`
+        : `Taller Personal ${user.user_metadata?.full_name || profile.id.slice(0, 6)}`;
+    await supabase.from("tenants").insert({ id: tenantId, name: workspaceName });
+    await supabase.from("profiles").update({ tenant_id: tenantId }).eq("id", profile.id);
+    profile.tenant_id = tenantId;
   }
 
   const dna = input.dna

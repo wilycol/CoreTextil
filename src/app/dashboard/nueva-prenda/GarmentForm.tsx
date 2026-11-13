@@ -4,7 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { inferGarmentDNA, type GarmentDNA } from "@/lib/ai";
 import { formatCop } from "@/lib/cop";
-import { createGarment, runColabVision } from "./actions";
+import { createGarment, analyzeGarmentWithAI } from "./actions";
+import type { AIQuotaStatus } from "@/lib/services/aiQuota";
 
 type Preview = {
   source: "local" | "gemini" | "fallback";
@@ -88,7 +89,12 @@ const PHOTO_GUIDE_STEPS = [
   },
 ];
 
-export default function GarmentForm() {
+export default function GarmentForm({
+  initialQuota,
+}: {
+  initialQuota?: AIQuotaStatus;
+}) {
+  const [quota, setQuota] = useState<AIQuotaStatus | undefined>(initialQuota);
   const [name, setName] = useState("");
   const [referenceCode, setReferenceCode] = useState(
     () => `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
@@ -152,29 +158,59 @@ export default function GarmentForm() {
       setError("Sube al menos una foto (frente, espalda, reverso) para analizar con IA.");
       return;
     }
-    setError(null);
-    setAnalyzing(true);
 
-    if (gpuStatus === "idle") {
-      setGpuStatus("booting");
-      await new Promise((r) => setTimeout(r, 2000));
-      setGpuStatus("online");
+    if (quota && !quota.allowed) {
+      setError(
+        quota.reason ||
+          "Has alcanzado tu cuota semanal de 2 análisis con IA. Se renueva el lunes a las 00:00 o adquiere el plan Pro para análisis ilimitados."
+      );
+      return;
     }
 
+    setError(null);
+    setAnalyzing(true);
+    setGpuStatus("online");
+
     try {
-      const res = await runColabVision({
+      const res = await analyzeGarmentWithAI({
+        imageBase64: photos[0].base64,
+        mimeType: photos[0].mimeType,
         referenceCode: referenceCode.trim().toUpperCase(),
-        name: name.trim(),
+        baseRateCop: Number(baseRate) || 4000,
+        hintName: name.trim(),
       });
 
-      if (res.ok) {
-        window.location.href = `/dashboard/prendas/${res.garmentId}`;
-      } else {
+      if (!res.ok) {
         setError(res.error);
         setAnalyzing(false);
+        return;
       }
+
+      setPreview({
+        source: "gemini",
+        note: null,
+        dna: {
+          parts: res.dna.parts,
+          operations: res.dna.operations,
+          totalSamMinutes: res.dna.totalSamMinutes,
+          suggestedRetailPrice: res.dna.suggestedRetailPrice,
+          materials: res.dna.materials,
+          materialsCostCop: res.dna.materialsCostCop,
+        },
+      });
+
+      if (quota && res.remaining !== "unlimited") {
+        setQuota({
+          ...quota,
+          used: quota.used + 1,
+          remaining: res.remaining,
+          allowed: res.remaining > 0,
+        });
+      }
+
+      setAnalyzing(false);
     } catch (err: any) {
-      setError(err.message ?? "Error conectando con el orquestador Fénix.");
+      setError(err.message ?? "Error conectando con el Vision Engine de Google Gemini.");
       setAnalyzing(false);
     }
   }
@@ -390,16 +426,25 @@ export default function GarmentForm() {
               ))}
             </div>
 
+            {quota && !quota.allowed && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                <p className="font-semibold">⚠️ Cuota gratuita semanal alcanzada ({quota.limit}/{quota.limit})</p>
+                <p className="mt-0.5 text-slate-300">
+                  Has utilizado tus 2 análisis con IA de esta semana. Tu cuota se renueva automáticamente cada lunes a las 00:00. Si requieres análisis ilimitados para tu taller, adquiere la suscripción Pro.
+                </p>
+              </div>
+            )}
+
             <button
               onClick={analyzeWithAI}
-              disabled={analyzing}
-              className="rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-500 hover:to-indigo-500 disabled:opacity-50"
+              disabled={analyzing || (quota ? !quota.allowed : false)}
+              className="rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {gpuStatus === "booting"
-                ? "🔥 Fénix: Encendiendo GPU remota en Colab..."
-                : analyzing
-                ? "✨ Vision Engine V2: Segmentando piezas y resolviendo despiece..."
-                : "✨ Analizar con Vision Engine V2 (IA en GPU)"}
+              {analyzing
+                ? "✨ Vision Engine: Analizando foto con Gemini IA (despiece + máquinas + SAM)..."
+                : quota && !quota.allowed
+                ? "🔒 Cuota semanal alcanzada (2/2) — Renueva el lunes"
+                : "✨ Analizar con Vision Engine IA (Google Gemini)"}
             </button>
           </div>
         )}

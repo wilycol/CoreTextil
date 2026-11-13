@@ -16,11 +16,13 @@ export default async function NewOrderPage({
     profile.role !== "brand_admin" &&
     profile.role !== "designer" &&
     profile.role !== "factory_admin" &&
-    profile.role !== "superadmin"
+    profile.role !== "superadmin" &&
+    profile.role !== "satellite_owner" &&
+    profile.role !== "operator"
   ) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
-        Solo las marcas y fábricas emiten órdenes de corte.
+        Inicia sesión con un rol válido para emitir o registrar órdenes.
       </p>
     );
   }
