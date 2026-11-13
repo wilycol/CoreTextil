@@ -215,6 +215,11 @@ const OPERATOR_CARDS: Card[] = [
 
 const SUPERADMIN_CARDS: Card[] = [
   {
+    href: "/dashboard/nueva-prenda",
+    title: "✨ ADN de prenda con IA (Vision Engine)",
+    text: "Sube foto o boceto y genera despiece inteligente, secuencia de ensamble por máquina, SAM y tarifas.",
+  },
+  {
     href: "/dashboard/operario",
     title: "📖 Cuaderno Digital (vista equipo)",
     text: "Vista omnipresente del cuaderno: anotaciones de todo el equipo, solicitudes de corrección y marcación de atados sin restricción de taller.",
