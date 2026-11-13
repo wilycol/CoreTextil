@@ -282,7 +282,7 @@ export default async function DashboardPage() {
       .select("name, logo_url, nit_rut")
       .eq("id", profile.tenant_id)
       .maybeSingle();
-      
+
     if (tenant) {
       linkInfo = `🏢 Marca: ${tenant.name}`;
       if (tenant.logo_url) avatarUrl = tenant.logo_url;
@@ -342,7 +342,7 @@ export default async function DashboardPage() {
       .from("satellite_links")
       .select("tenants(name)")
       .eq("satellite_user_id", profile.id);
-    
+
     if (links && links.length > 0) {
       const names = links.map((l: any) => l.tenants?.name).filter(Boolean).join(", ");
       linkInfo = `🏭 Taller: ${workshopName} | 🤝 Vinculado a Marcas: ${names}`;
