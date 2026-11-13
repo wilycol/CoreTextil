@@ -1,15 +1,15 @@
-// CoreTextil PWA · Service Worker mínimo.
-// Su función principal es cumplir el requisito de Chrome para instalar la app
-// (WebAPK standalone en Android). Estrategia conservadora: SOLO cachea activos
-// inmutables; las páginas del dashboard, la API y las respuestas autenticadas
-// pasan siempre por la red y jamás se cachean.
+// CoreTextil PWA · Service Worker con soporte Standalone Offline.
+// Permite abrir el Cuaderno Digital sin internet, guardar anotaciones
+// y piezas localmente y sincronizar en caliente al recuperar conexión.
 
-const CACHE = "coretextil-v1";
+const CACHE = "coretextil-v2";
 
 const PRECACHE = [
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icon.png",
+  "/logo.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -40,11 +40,41 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Cache-first solo para activos inmutables; el resto pasa sin interceptar.
+  // 1. Navegación (HTML): Network-first con fallback a caché para soportar Offline
+  if (request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse && networkResponse.ok) {
+            const cache = await caches.open(CACHE);
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch {
+          // Si estamos desconectados (Offline), busca la página en caché
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const fallbackOperario = await caches.match("/dashboard/operario");
+          if (fallbackOperario) return fallbackOperario;
+          return new Response(
+            `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>CoreTextil Offline</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{background:#090d16;color:#e2e8f0;font-family:sans-serif;padding:2rem;text-align:center;}h1{color:#38bdf8;}a{color:#38bdf8;text-decoration:none;font-weight:bold;}</style></head><body><h1>📡 Modo Standalone Desconectado</h1><p>Estás en modo sin internet. Puedes continuar anotando tu producción en el Cuaderno Digital.</p><p><a href="/dashboard/operario">Abrir Cuaderno Digital →</a></p></body></html>`,
+            { headers: { "Content-Type": "text/html; charset=utf-8" } }
+          );
+        }
+      })()
+    );
+    return;
+  }
+
+  // 2. Activos inmutables: Cache-first
   const cacheable =
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
+    url.pathname === "/icon.png" ||
+    url.pathname === "/logo.png" ||
     url.pathname === "/manifest.webmanifest";
+
   if (!cacheable) return;
 
   event.respondWith(

@@ -33,6 +33,7 @@ import {
   weekRange,
   type ShiftConfig,
 } from "@/lib/notebook";
+import { saveLogsOffline, loadLogsOffline } from "@/lib/offlineStorage";
 
 export function Tooltip({ text, label = "?" }: { text: string; label?: string }) {
   const [open, setOpen] = useState(false);
@@ -421,12 +422,14 @@ function persistLogs(storageKey: string, logs: ManualLog[]) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(logs));
   } catch {
-    // Cuota llena: si hubo imagen, reintenta sin las fotos más antiguas
+    // Cuota llena en localStorage: si hubo imagen, reintenta sin las fotos más antiguas
     const trimmed = logs.map((l, i) => (i > 3 ? { ...l, image: null } : l));
     try {
       localStorage.setItem(storageKey, JSON.stringify(trimmed));
     } catch {}
   }
+  // Respaldo asíncrono en IndexedDB (soporte de cientos de MB sin truncar imágenes)
+  saveLogsOffline(storageKey, logs);
 }
 
 const DEFAULT_SHIFT: ShiftConfig = {
@@ -514,6 +517,31 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
     typeof window === "undefined" ? [] : loadLogs(storageKey)
   );
   const [compactView, setCompactView] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Recupera registros completos con fotos desde IndexedDB
+    loadLogsOffline(storageKey).then((offlineLogs) => {
+      if (offlineLogs && offlineLogs.length > logs.length) {
+        setLogs(offlineLogs);
+      }
+    });
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [storageKey, logs.length]);
 
   function handlePrendaChange(newPrenda: string) {
     setPrenda(newPrenda);
@@ -865,8 +893,24 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 className="text-2xl font-extrabold text-slate-100">{title}</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-2xl font-extrabold text-slate-100">{title}</h2>
+                  {isOnline ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                      🟢 En línea · Respaldo local
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-300 animate-pulse">
+                      📡 Modo Standalone · Sin Internet (Guardando en Celular)
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
+                {!isOnline && (
+                  <p className="mt-2 rounded-lg bg-amber-950/50 border border-amber-500/40 p-2 text-xs font-medium text-amber-200">
+                    ⚡ <strong>Modo Standalone activo:</strong> Puedes continuar cosiendo y anotando tus piezas y fotos sin conexión. Todo queda resguardado de forma segura en la memoria de tu teléfono.
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
@@ -1143,7 +1187,7 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
             </div>
 
             {/* Foto */}
-            <div className="flex items-center gap-4 pt-1">
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               <label className="flex cursor-pointer items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-500">
                 📷 {imagePreview ? "Cambiar foto" : "Adjuntar foto de la pieza / prenda"}
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -1157,6 +1201,9 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
                   </button>
                 </div>
               )}
+              <span className="text-[10px] text-cyan-400/90 font-medium bg-cyan-950/30 px-2 py-1 rounded-md border border-cyan-800/40">
+                💾 Fotos seguras en tu celular (IndexedDB sin límite de espacio)
+              </span>
             </div>
 
             {/* ✅ V2: Sumar y RESTAR con corrección táctil al instante */}
