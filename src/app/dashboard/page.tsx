@@ -54,6 +54,69 @@ const BRAND_CARDS: Card[] = [
   },
 ];
 
+const FACTORY_CARDS: Card[] = [
+  {
+    href: "/dashboard/nueva-prenda",
+    title: "✨ ADN de prenda con IA",
+    text: "Diseño y despiece inteligente: sube foto o boceto y genera secuencia de ensamble, SAM y tarifas.",
+  },
+  {
+    href: "/dashboard/prendas",
+    title: "📋 Fichas técnicas",
+    text: "Catálogo maestro de prendas, ruta de máquinas, costos de insumos y ficha imprimible para corte.",
+  },
+  {
+    href: "/dashboard/ordenes",
+    title: "✂️ Órdenes de corte y Atados",
+    text: "Emite matrices de tendido, asigna a tu planta interna y genera etiquetas QR para cada bulto.",
+  },
+  {
+    href: "/dashboard/operario",
+    title: "📖 Cuaderno Digital & Planta",
+    text: "Supervisa en vivo las piezas marcadas por tu cuadrilla de costura y autoriza correcciones.",
+  },
+  {
+    href: "/dashboard/escanear",
+    title: "📱 Escanear atado (QR)",
+    text: "Recepción de bultos en planta apuntando con la cámara para pasar los lotes a «En ensamble».",
+  },
+  {
+    href: "/dashboard/nomina",
+    title: "💵 Nómina de operarios",
+    text: "Liquidación semanal o quincenal a 1 clic: piezas elaboradas y destajo exacto por costurero.",
+  },
+  {
+    href: "/dashboard/red",
+    title: "👥 Cuadrilla y Talleres",
+    text: "Administra los operarios de tu planta y vincula satélites externos para temporadas de alta demanda.",
+  },
+  {
+    href: "/dashboard/satelite",
+    title: "⚙️ Costos y Maquinaria",
+    text: "Configura tus máquinas disponibles, costos fijos mensuales y simula el rendimiento de tu planta.",
+  },
+  {
+    href: "/dashboard/reportes",
+    title: "📊 Reportes contables",
+    text: "Consolidado de producción, piezas terminadas, liquidaciones y balance de costos de los últimos 12 meses.",
+  },
+  {
+    href: "/dashboard/tickets",
+    title: "🧷 Mesa de reposición & Novedades",
+    text: "Control inmediato de piezas faltantes o tela dañada entre la mesa de corte y la línea de costura.",
+  },
+  {
+    href: "/dashboard/soporte",
+    title: "💬 Ayuda & Soporte",
+    text: "Reporta fallas, sugiere nuevas funciones y recibe asistencia técnica directa.",
+  },
+  {
+    href: "/dashboard/perfil",
+    title: "⚙️ Ajustes de Cuenta",
+    text: "Respalda tus datos, cambia tu tipo de rol o gestiona tu cuenta.",
+  },
+];
+
 const SATELLITE_CARDS: Card[] = [
   {
     href: "/dashboard/operario",
@@ -222,6 +285,26 @@ export default async function DashboardPage() {
         };
       }
     }
+  } else if (profile.role === "factory_admin") {
+    cards = FACTORY_CARDS;
+    const [{ data: tenant }, { data: costProfile }] = await Promise.all([
+      supabase
+        .from("tenants")
+        .select("name, logo_url, nit_rut")
+        .eq("id", profile.tenant_id)
+        .maybeSingle(),
+      supabase
+        .from("satellite_cost_profiles")
+        .select("commercial_name, logo_url")
+        .eq("satellite_user_id", profile.id)
+        .maybeSingle(),
+    ]);
+
+    const factoryName = tenant?.name || "Mi Fábrica Textil";
+    const plantName = costProfile?.commercial_name || "Planta de Confección Interna";
+    linkInfo = `🏭 Fábrica: ${factoryName} | 🧵 Taller de Planta: ${plantName}`;
+    if (tenant?.logo_url) avatarUrl = tenant.logo_url;
+    else if (costProfile?.logo_url) avatarUrl = costProfile.logo_url;
   } else if (profile.role === "satellite_owner") {
     cards = SATELLITE_CARDS;
 

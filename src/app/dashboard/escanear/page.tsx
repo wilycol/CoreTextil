@@ -12,7 +12,8 @@ export default async function ScanPage({
   if (
     profile.role !== "satellite_owner" &&
     profile.role !== "operator" &&
-    profile.role !== "superadmin"
+    profile.role !== "superadmin" &&
+    profile.role !== "factory_admin"
   ) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">

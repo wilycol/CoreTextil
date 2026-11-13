@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 type Result = { ok: true } | { ok: false; error: string };
 
 export async function completeOnboarding(
-  role: "brand_admin" | "satellite_owner" | "operator",
+  role: "brand_admin" | "satellite_owner" | "operator" | "factory_admin",
   satelliteOwnerEmail?: string
 ): Promise<Result> {
   const supabase = await createClient();
@@ -20,8 +20,46 @@ export async function completeOnboarding(
     .eq("id", user.id)
     .single();
 
-  // Ya está onboardedo (marca con tenant o satélite con rol asignado)
-  if (profile?.role === "brand_admin" || profile?.role === "satellite_owner") {
+  // Ya está onboardedo (marca con tenant, satélite o fábrica con rol asignado)
+  if (
+    profile?.role === "brand_admin" ||
+    profile?.role === "satellite_owner" ||
+    profile?.role === "factory_admin"
+  ) {
+    return { ok: true };
+  }
+
+  if (role === "factory_admin") {
+    const tenantId = crypto.randomUUID();
+
+    const { error: tenantError } = await supabase
+      .from("tenants")
+      .insert({ id: tenantId, name: "Mi Fábrica Textil" });
+
+    if (tenantError) {
+      console.error(tenantError);
+      return { ok: false, error: "No se pudo crear la fábrica: " + tenantError.message };
+    }
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ role: "factory_admin", tenant_id: tenantId })
+      .eq("id", user.id);
+
+    if (profileError) return { ok: false, error: profileError.message };
+
+    // Inicializamos perfil de taller de planta interna y vínculo automático
+    await supabase.from("satellite_cost_profiles").insert({
+      satellite_user_id: user.id,
+      commercial_name: "Planta de Confección Interna",
+      estimated_monthly_units: 3000,
+    });
+
+    await supabase.from("satellite_links").insert({
+      satellite_user_id: user.id,
+      brand_tenant_id: tenantId,
+    });
+
     return { ok: true };
   }
 

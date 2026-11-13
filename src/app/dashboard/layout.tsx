@@ -10,6 +10,8 @@ const ROLE_LABEL: Record<string, string> = {
   cutter: "Corte",
   satellite_owner: "Taller satélite",
   operator: "Operario",
+  factory_admin: "🏭 Fábrica Integrada",
+  superadmin: "👑 SuperAdmin",
 };
 
 export default async function DashboardLayout({

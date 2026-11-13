@@ -13,11 +13,12 @@ export default async function OperatorLogPage({
 
   // Superadmin tiene vista omnipresente: ve el cuaderno como si fuera jefe de taller
   const isSuperAdmin = profile.role === "superadmin";
+  const isBoss = profile.role === "satellite_owner" || profile.role === "factory_admin";
 
-  if (profile.role !== "operator" && profile.role !== "satellite_owner" && !isSuperAdmin) {
+  if (profile.role !== "operator" && !isBoss && !isSuperAdmin) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
-        La marcación es para operarios y jefes de taller.
+        La marcación es para operarios, jefes de taller y fábricas.
       </p>
     );
   }
@@ -83,9 +84,9 @@ export default async function OperatorLogPage({
     0
   );
 
-  // Fetch team if the user is a satellite owner (superadmin: todo el equipo)
+  // Fetch team if the user is a satellite owner or factory admin (superadmin: todo el equipo)
   let operators: { id: string; full_name: string }[] = [];
-  if (profile.role === "satellite_owner" || isSuperAdmin) {
+  if (isBoss || isSuperAdmin) {
     const { data: team } = isSuperAdmin
       ? await supabase
           .from("profiles")
@@ -153,7 +154,7 @@ export default async function OperatorLogPage({
   const reqSelect =
     "id, log_id, requested_by, change_type, new_units, reason, status, decided_at, created_at";
 
-  if (profile.role === "satellite_owner" || isSuperAdmin) {
+  if (isBoss || isSuperAdmin) {
     let reqsQuery = supabase
       .from("logbook_change_requests")
       .select(reqSelect + ", daily_production_logs(bundle_code)")

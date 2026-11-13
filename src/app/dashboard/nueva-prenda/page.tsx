@@ -3,10 +3,15 @@ import GarmentForm from "./GarmentForm";
 
 export default async function NewGarmentPage() {
   const { profile } = await getSession();
-  if (profile.role !== "brand_admin" && profile.role !== "designer") {
+  if (
+    profile.role !== "brand_admin" &&
+    profile.role !== "designer" &&
+    profile.role !== "factory_admin" &&
+    profile.role !== "superadmin"
+  ) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
-        Solo las marcas y diseñadores crean prendas.
+        Solo las marcas, diseñadores y fábricas crean prendas.
       </p>
     );
   }

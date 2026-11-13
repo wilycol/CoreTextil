@@ -73,6 +73,7 @@ export async function createOrderCore(
   }
 
   const orderNumber = `OC-${Date.now().toString(36).toUpperCase()}`;
+  const isInternalAssignment = satelliteUserId === userId;
 
   const { data: order, error: orderError } = await supabase
     .from("production_orders")
@@ -83,7 +84,8 @@ export async function createOrderCore(
       satellite_user_id: satelliteUserId,
       unit_price_agreed: input.unitPriceAgreed,
       total_units: cleanMatrix.reduce((acc, r) => acc + Number(r.units), 0),
-      status: satelliteUserId ? "dispatched" : "cutting",
+      status: isInternalAssignment ? "in_progress" : satelliteUserId ? "dispatched" : "cutting",
+      assignment_status: isInternalAssignment ? "accepted" : "proposed",
     })
     .select("id")
     .single();

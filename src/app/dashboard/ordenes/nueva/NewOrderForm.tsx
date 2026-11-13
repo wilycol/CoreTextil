@@ -19,7 +19,11 @@ export default function NewOrderForm({
 }) {
   const router = useRouter();
   const [garmentId, setGarmentId] = useState(preselectedGarment ?? garments[0]?.id ?? "");
-  const [satelliteEmail, setSatelliteEmail] = useState("");
+  const [satelliteEmail, setSatelliteEmail] = useState(
+    satellites.length === 1 || satellites[0]?.full_name.includes("Planta de Confección Interna")
+      ? (satellites[0]?.email ?? "")
+      : ""
+  );
   const [unitPrice, setUnitPrice] = useState("4000");
   const [rows, setRows] = useState<MatrixRow[]>([
     { size: "S", color: "NEGRO", units: 0 },

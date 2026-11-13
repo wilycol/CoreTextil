@@ -25,6 +25,7 @@ export default function AccountSettingsClient({
 
   const roleLabels: Record<string, string> = {
     brand_admin: "🏷️ Marca / Administrador",
+    factory_admin: "🏭 Fábrica Integrada (Corte + Confección)",
     satellite_owner: "🏭 Taller Satélite",
     operator: "🧵 Operario a Destajo",
     superadmin: "👑 SuperAdmin",

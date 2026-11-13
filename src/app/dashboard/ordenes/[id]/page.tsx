@@ -8,6 +8,7 @@ import PrintButton from "./PrintButton";
 import LiquidationPanel from "./LiquidationPanel";
 import OrderNegotiationClient from "./OrderNegotiationClient";
 import DeleteOrderButton from "./DeleteOrderButton";
+import GarmentAssemblyViewer2D from "@/components/GarmentAssemblyViewer2D";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Borrador",
@@ -43,42 +44,56 @@ export default async function OrderDetailPage({
   const bundleRows = (bundles ?? []) as OrderBundlesRow[];
   const o = order as ProductionOrdersRow;
 
+  // ---- Carga de datos de prenda, operaciones, logs y tickets para el Visor 2D ----
+  const [{ data: garment }, { data: allOps }, { data: tickets }, { data: logs }] = await Promise.all([
+    supabase
+      .from("garments")
+      .select("name, reference_code")
+      .eq("id", o.garment_id)
+      .maybeSingle(),
+    supabase
+      .from("garment_operations")
+      .select("*")
+      .eq("garment_id", o.garment_id)
+      .order("step_order", { ascending: true }),
+    supabase
+      .from("material_tickets")
+      .select("id, status")
+      .eq("order_id", id)
+      .in("status", ["pending_satellite", "approved_satellite", "in_cutting_room"]),
+    supabase
+      .from("daily_production_logs")
+      .select("bundle_id, operation_id, units_completed")
+      .eq("order_id", id),
+  ]);
+
+  const totalOps = (allOps ?? []).length;
+  const completedByOp: Record<string, number> = {};
+  const acc: Record<string, Record<string, number>> = {};
+  for (const l of (logs ?? []) as any[]) {
+    acc[l.bundle_id] ??= {};
+    acc[l.bundle_id][l.operation_id] =
+      (acc[l.bundle_id][l.operation_id] ?? 0) + Number(l.units_completed);
+    completedByOp[l.operation_id] =
+      (completedByOp[l.operation_id] ?? 0) + Number(l.units_completed);
+  }
+
   // ---- Avance y liquidación (entregadas vs por ensamblar) ----
   const isBrandOwner = profile.tenant_id === o.tenant_id;
-
   let deliveredUnits = 0;
   let alreadyLiquidated = false;
 
+  if (totalOps > 0) {
+    for (const b of bundleRows) {
+      const perOp = acc[b.id] ?? {};
+      const opsDone = Object.values(perOp).filter(
+        (u) => u >= b.units_count
+      ).length;
+      if (opsDone >= totalOps) deliveredUnits += b.units_count;
+    }
+  }
+
   if (isBrandOwner) {
-    const { data: ops } = await supabase
-      .from("garment_operations")
-      .select("id")
-      .eq("garment_id", o.garment_id);
-    const totalOps = ops?.length ?? 0;
-
-    // FIX QA: solo los logs de ESTA orden (antes traía todas las de la BD)
-    const { data: logs } = await supabase
-      .from("daily_production_logs")
-      .select("bundle_id, operation_id, units_completed")
-      .eq("order_id", id);
-
-    const acc: Record<string, Record<string, number>> = {};
-    for (const l of (logs ?? []) as any[]) {
-      acc[l.bundle_id] ??= {};
-      acc[l.bundle_id][l.operation_id] =
-        (acc[l.bundle_id][l.operation_id] ?? 0) + Number(l.units_completed);
-    }
-
-    if (totalOps > 0) {
-      for (const b of bundleRows) {
-        const perOp = acc[b.id] ?? {};
-        const opsDone = Object.values(perOp).filter(
-          (u) => u >= b.units_count
-        ).length;
-        if (opsDone >= totalOps) deliveredUnits += b.units_count;
-      }
-    }
-
     const { data: liq } = await supabase
       .from("order_liquidations")
       .select("id")
@@ -86,6 +101,19 @@ export default async function OrderDetailPage({
       .maybeSingle();
     alreadyLiquidated = !!liq;
   }
+
+  const hasAnyAlert = (tickets ?? []).length > 0;
+  const viewerOperations = (allOps ?? []).map((op: any) => ({
+    id: op.id,
+    stepOrder: op.step_order,
+    operationName: op.operation_name,
+    machineType: op.machine_type,
+    rateCop: Number(op.base_rate_cop),
+    samMinutes: op.sam_minutes ? Number(op.sam_minutes) : null,
+    unitsCompleted: completedByOp[op.id] ?? 0,
+    totalUnits: o.total_units,
+    hasAlert: hasAnyAlert,
+  }));
 
   const pendingUnits = Math.max(0, o.total_units - deliveredUnits);
 
@@ -130,6 +158,16 @@ export default async function OrderDetailPage({
           orderId={o.id}
           currentStatus={o.assignment_status}
           isSatellite={profile.role === "satellite_owner"}
+        />
+      </div>
+
+      {/* Visor 2D Interactivo de Avance de Ensamble de la Prenda */}
+      <div className="mt-6">
+        <GarmentAssemblyViewer2D
+          operations={viewerOperations}
+          garmentName={garment?.name || "Prenda"}
+          referenceCode={garment?.reference_code || "REF"}
+          totalOrderUnits={o.total_units}
         />
       </div>
 

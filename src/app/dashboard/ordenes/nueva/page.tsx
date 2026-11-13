@@ -12,10 +12,15 @@ export default async function NewOrderPage({
   const supabase = await createClient();
   const { garment: garmentParam } = await searchParams;
 
-  if (profile.role !== "brand_admin" && profile.role !== "designer") {
+  if (
+    profile.role !== "brand_admin" &&
+    profile.role !== "designer" &&
+    profile.role !== "factory_admin" &&
+    profile.role !== "superadmin"
+  ) {
     return (
       <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-slate-300">
-        Solo las marcas emiten órdenes de corte.
+        Solo las marcas y fábricas emiten órdenes de corte.
       </p>
     );
   }
@@ -53,8 +58,23 @@ export default async function NewOrderPage({
   const satellitesList = (satProfiles ?? []).map((s: any) => ({
     id: s.id,
     email: s.email,
-    full_name: costProfilesMap[s.id] || s.full_name || "Taller Satélite",
+    full_name:
+      s.id === profile.id
+        ? "🏭 Planta de Confección Interna (Taller Propio)"
+        : costProfilesMap[s.id] || s.full_name || "Taller Satélite",
   }));
+
+  // Si es fábrica integrada y aún no aparece en la lista, agregar su propia planta al inicio
+  if (profile.role === "factory_admin") {
+    const hasSelf = satellitesList.some((s) => s.id === profile.id);
+    if (!hasSelf) {
+      satellitesList.unshift({
+        id: profile.id,
+        email: profile.email,
+        full_name: "🏭 Planta de Confección Interna (Taller Propio)",
+      });
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl">

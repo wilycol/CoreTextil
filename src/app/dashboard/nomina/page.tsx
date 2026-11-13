@@ -5,7 +5,11 @@ import NominaClient, { type NominaData } from "./NominaClient";
 
 export default async function NominaPage() {
   const { profile } = await getSession();
-  if (profile.role !== "satellite_owner" && profile.role !== "superadmin")
+  if (
+    profile.role !== "satellite_owner" &&
+    profile.role !== "superadmin" &&
+    profile.role !== "factory_admin"
+  )
     redirect("/dashboard");
 
   const supabase = await createClient();

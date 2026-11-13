@@ -4,7 +4,8 @@ export type UserRole =
   | "cutter"
   | "satellite_owner"
   | "operator"
-  | "superadmin";
+  | "superadmin"
+  | "factory_admin";
 
 export type OrderStatus =
   | "draft"
