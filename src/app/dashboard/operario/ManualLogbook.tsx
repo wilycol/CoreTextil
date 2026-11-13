@@ -63,40 +63,312 @@ export function Tooltip({ text, label = "?" }: { text: string; label?: string })
   );
 }
 
-/* --------- Catálogo global de prendas y piezas (franela, shorts, pantalones…) --------- */
+/* --------- Catálogo global de prendas y piezas con procesos especializados --------- */
 
 const GARMENT_PRESETS = [
   "Franela / Blusa",
+  "Pantalón Jean / Dril",
   "Camiseta Polo",
   "Camiseta Básica",
   "Camisa Manga Larga",
-  "Pantalón Jean",
   "Short / Bermudas",
   "Buzo / Sudadera",
-  "Leggins",
+  "Chaqueta / Chompa",
+  "Enterizo / Overol",
+  "Pantaloneta / Boxer",
+  "Leggins / Licras",
   "Pijama / Conjunto",
   "Uniforme Escolar",
   "Ropa Deportiva",
   "✏️ Otra prenda (personalizada)...",
 ];
 
-const PIECE_PRESETS = [
-  "🧩 Piezas cortadas — Manga",
-  "🧩 Piezas cortadas — Cuello",
-  "🧩 Piezas cortadas — Frente/Trasera",
-  "🧩 Piezas cortadas — Bolsillo",
-  "🧩 Piezas cortadas — Pretina/Cintura",
-  "🧵 Proceso — Filete (cerrar costados)",
-  "🧵 Proceso — Plana (unir/pisar)",
-  "🧵 Proceso — Collarín (ruedo/dobladillo)",
-  "🧵 Proceso — Presille (refuerzos)",
-  "🧵 Proceso — Pegar mangas",
-  "🧵 Proceso — Pegar cuello",
-  "🧵 Proceso — Pegar resorte/pretina",
-  "🧵 Proceso — Pegar bolsillos",
+const GENERIC_PIECE_PRESETS = [
+  "🧩 Piezas cortadas — Frente y Espalda",
+  "🧩 Piezas cortadas — Mangas o Piernas",
+  "🧩 Piezas cortadas — Cuello o Pretina",
+  "🧩 Piezas cortadas — Bolsillos",
+  "🧵 Proceso — Fileteadora (cerrar costados / uniones)",
+  "🧵 Proceso — Plana (unir piezas / pespunte)",
+  "🧵 Proceso — Collarín (ruedo / dobladillo / sesgo)",
+  "🧵 Proceso — Presille (remates de refuerzo)",
+  "🧵 Proceso — Pegar elásticos o cierres",
   "👕 Prenda completa (ensamblado final)",
   "✏️ Otro (personalizado)...",
 ];
+
+const PIECE_PRESETS_BY_GARMENT: Record<string, string[]> = {
+  "Franela / Blusa": [
+    "🧩 Piezas cortadas — Frente y Espalda",
+    "🧩 Piezas cortadas — Mangas",
+    "🧩 Piezas cortadas — Cuello / Sesgo / Tiras",
+    "🧵 Proceso — Unir hombros (fileteadora)",
+    "🧵 Proceso — Pegar sesgo o cuello (collarín / sesgadora)",
+    "🧵 Proceso — Pegar mangas a sisa (fileteadora)",
+    "🧵 Proceso — Cerrar costados y bajo manga (fileteadora)",
+    "🧵 Proceso — Dobladillar mangas y faldón (collarín)",
+    "🧵 Proceso — Pisar escote / pespunte (plana / collarín)",
+    "🧵 Proceso — Pinzas o fruncidos de busto (plana)",
+    "👚 Prenda completa (ensamblado de blusa)",
+    "✏️ Otro proceso de blusa...",
+  ],
+  "Pantalón Jean / Dril": [
+    "🧩 Piezas cortadas — Delanteros (con bolsillos)",
+    "🧩 Piezas cortadas — Traseros",
+    "🧩 Piezas cortadas — Relojera y Vistas de bolsillo",
+    "🧩 Piezas cortadas — Pretina y Pasadores",
+    "🧵 Proceso — Armar y fijar relojera y boca de bolsillo delantero (plana)",
+    "🧵 Proceso — Pegar bolsillos traseros (plana 2 agujas)",
+    "🧵 Proceso — Unir cotillas / canesú trasero (cerradora de codo o 2 agujas)",
+    "🧵 Proceso — Cerrar tiro delantero y colocar cremallera/cierre (plana)",
+    "🧵 Proceso — Cerrar tiro trasero (cerradora de codo / filete + plana)",
+    "🧵 Proceso — Cerrar entrepierna (cerradora / 2 agujas)",
+    "🧵 Proceso — Cerrar costados (fileteadora con puntada de seguridad)",
+    "🧵 Proceso — Pegar pretina (pretinadora)",
+    "🧵 Proceso — Armar y presillar pasadores (presilladora)",
+    "🧵 Proceso — Dobladillar bota / ruedo (plana)",
+    "🧵 Proceso — Presillar tiros, bolsillos y aletilla (presilladora)",
+    "🧵 Proceso — Ojal y botón metálico (ojaladora/botonera)",
+    "👖 Prenda completa (ensamblado de jean)",
+    "✏️ Otro proceso de pantalón...",
+  ],
+  "Pantalón Jean": [
+    "🧩 Piezas cortadas — Delanteros (con bolsillos)",
+    "🧩 Piezas cortadas — Traseros",
+    "🧩 Piezas cortadas — Relojera y Vistas de bolsillo",
+    "🧩 Piezas cortadas — Pretina y Pasadores",
+    "🧵 Proceso — Armar y fijar relojera y boca de bolsillo delantero (plana)",
+    "🧵 Proceso — Pegar bolsillos traseros (plana 2 agujas)",
+    "🧵 Proceso — Unir cotillas / canesú trasero (cerradora de codo o 2 agujas)",
+    "🧵 Proceso — Cerrar tiro delantero y colocar cremallera/cierre (plana)",
+    "🧵 Proceso — Cerrar tiro trasero (cerradora de codo / filete + plana)",
+    "🧵 Proceso — Cerrar entrepierna (cerradora / 2 agujas)",
+    "🧵 Proceso — Cerrar costados (fileteadora con puntada de seguridad)",
+    "🧵 Proceso — Pegar pretina (pretinadora)",
+    "🧵 Proceso — Armar y presillar pasadores (presilladora)",
+    "🧵 Proceso — Dobladillar bota / ruedo (plana)",
+    "🧵 Proceso — Presillar tiros, bolsillos y aletilla (presilladora)",
+    "🧵 Proceso — Ojal y botón metálico (ojaladora/botonera)",
+    "👖 Prenda completa (ensamblado de jean)",
+    "✏️ Otro proceso de pantalón...",
+  ],
+  "Camiseta Polo": [
+    "🧩 Piezas cortadas — Frente y Espalda",
+    "🧩 Piezas cortadas — Mangas y Puños tejidos",
+    "🧩 Piezas cortadas — Cuello tejido y Pechera",
+    "🧵 Proceso — Preparar y armar pechera / perilla (plana)",
+    "🧵 Proceso — Pegar pechera al delantero y cajón (plana)",
+    "🧵 Proceso — Unir hombros con cinta estabilizadora (fileteadora)",
+    "🧵 Proceso — Pegar cuello tejido al escote (fileteadora)",
+    "🧵 Proceso — Tapacostura de cuello con cinta (plana)",
+    "🧵 Proceso — Pegar puños tejidos a mangas (fileteadora)",
+    "🧵 Proceso — Pegar mangas a sisa (fileteadora)",
+    "🧵 Proceso — Cerrar costados dejando abertura lateral (fileteadora)",
+    "🧵 Proceso — Pisar aberturas laterales y ruedo (collarín)",
+    "🧵 Proceso — Ojales y botones en pechera (ojaladora/botonera)",
+    "👕 Prenda completa (ensamblado de polo)",
+    "✏️ Otro proceso de polo...",
+  ],
+  "Camiseta Básica": [
+    "🧩 Piezas cortadas — Frente y Espalda",
+    "🧩 Piezas cortadas — Mangas",
+    "🧩 Piezas cortadas — Cuello de Rib",
+    "🧵 Proceso — Unir hombros (fileteadora)",
+    "🧵 Proceso — Pegar cuello de rib redondo o V (fileteadora)",
+    "🧵 Proceso — Tapacostura de hombro a hombro (plana / collarín)",
+    "🧵 Proceso — Asentar cuello / pespunte (collarín / plana)",
+    "🧵 Proceso — Pegar mangas a sisa (fileteadora)",
+    "🧵 Proceso — Cerrar costados y mangas (fileteadora)",
+    "🧵 Proceso — Dobladillar mangas y faldón (collarín 2 o 3 agujas)",
+    "👕 Prenda completa (ensamblado de camiseta)",
+    "✏️ Otro proceso de camiseta...",
+  ],
+  "Camisa Manga Larga": [
+    "🧩 Piezas cortadas — Delanteros y Espalda",
+    "🧩 Piezas cortadas — Almilla / Canesú doble",
+    "🧩 Piezas cortadas — Mangas, Puños y Aletillas",
+    "🧩 Piezas cortadas — Cuello y Pie de cuello",
+    "🧩 Piezas cortadas — Bolsillos de parche",
+    "🧵 Proceso — Armar y voltear cuello y pie de cuello (fusionar + plana)",
+    "🧵 Proceso — Armar aletillas de manga y tablas (plana)",
+    "🧵 Proceso — Armar y pegar bolsillo con pespunte (plana)",
+    "🧵 Proceso — Perilla / pechera de botones delantera (plana)",
+    "🧵 Proceso — Pegar almilla a hombros y espalda (plana)",
+    "🧵 Proceso — Pegar pie de cuello al escote (plana)",
+    "🧵 Proceso — Pegar mangas a sisa (plana / 2 agujas)",
+    "🧵 Proceso — Cerrar costados y bajo manga con costura francesa (plana / cerradora)",
+    "🧵 Proceso — Pegar puños a mangas (plana)",
+    "🧵 Proceso — Dobladillo de faldón curvo (plana con dobladillador)",
+    "🧵 Proceso — Ojales y pegado de botones en pechera y puños",
+    "👔 Prenda completa (ensamblado de camisa)",
+    "✏️ Otro proceso de camisa...",
+  ],
+  "Short / Bermudas": [
+    "🧩 Piezas cortadas — Delanteros y Traseros",
+    "🧩 Piezas cortadas — Bolsillos laterales y traseros",
+    "🧩 Piezas cortadas — Pretina / Resorte",
+    "🧵 Proceso — Armar y fijar bolsillos laterales (plana / filete)",
+    "🧵 Proceso — Unir tiro delantero y cremallera (plana)",
+    "🧵 Proceso — Unir tiro trasero (fileteadora + pespunte plana)",
+    "🧵 Proceso — Cerrar entrepierna (fileteadora con puntada de seguridad)",
+    "🧵 Proceso — Cerrar costados (fileteadora)",
+    "🧵 Proceso — Pegar pretina o embonar elástico (pretinadora o plana)",
+    "🧵 Proceso — Pisar pretina / costuras de resorte (plana o multiagujas)",
+    "🧵 Proceso — Dobladillar bota / ruedo de pierna (plana o collarín)",
+    "🧵 Proceso — Presillar tiros, bolsillos y pasadores (presilladora)",
+    "🩳 Prenda completa (ensamblado de short)",
+    "✏️ Otro proceso de short...",
+  ],
+  "Buzo / Sudadera": [
+    "🧩 Piezas cortadas — Frente y Espalda",
+    "🧩 Piezas cortadas — Mangas y Puños de Rib",
+    "🧩 Piezas cortadas — Capota / Capucha (exterior y forro)",
+    "🧩 Piezas cortadas — Bolsillo canguro",
+    "🧩 Piezas cortadas — Pretina inferior de Rib",
+    "🧵 Proceso — Dobladillar y fijar bolsillo canguro al frente (plana 2 agujas)",
+    "🧵 Proceso — Armar capota con ojaletes para cordón (plana)",
+    "🧵 Proceso — Unir hombros con cinta de refuerzo (fileteadora)",
+    "🧵 Proceso — Pegar capota al escote y pespunte (fileteadora + plana)",
+    "🧵 Proceso — Pegar mangas a sisa (fileteadora)",
+    "🧵 Proceso — Cerrar costados y mangas (fileteadora pesada)",
+    "🧵 Proceso — Pegar puños de rib en mangas (fileteadora)",
+    "🧵 Proceso — Pegar pretina de rib inferior (fileteadora)",
+    "🧥 Prenda completa (ensamblado de buzo/hoodie)",
+    "✏️ Otro proceso de buzo...",
+  ],
+  "Chaqueta / Chompa": [
+    "🧩 Piezas cortadas — Cuerpos delanteros y espalda",
+    "🧩 Piezas cortadas — Forro acolchado o liso",
+    "🧩 Piezas cortadas — Mangas y Puños",
+    "🧩 Piezas cortadas — Cuello alto / Capota",
+    "🧩 Piezas cortadas — Tapas y vistas de bolsillos",
+    "🧵 Proceso — Armar bolsillos con cremallera o vivos (plana)",
+    "🧵 Proceso — Pegar cremallera delantera principal desmontable (plana)",
+    "🧵 Proceso — Unir hombros y costados del exterior (plana / filete)",
+    "🧵 Proceso — Pegar mangas y cuello / pretina exterior",
+    "🧵 Proceso — Armar forro interior completo",
+    "🧵 Proceso — Embolsar / forrar chaqueta con forro interior (plana)",
+    "🧵 Proceso — Pespunte perimetral de cremallera y cuello (plana)",
+    "🧵 Proceso — Presille de remate en bolsillos y cremallera",
+    "🧥 Prenda completa (ensamblado de chaqueta)",
+    "✏️ Otro proceso de chaqueta...",
+  ],
+  "Enterizo / Overol": [
+    "🧩 Piezas cortadas — Corpiño / Parte superior",
+    "🧩 Piezas cortadas — Pantalón / Parte inferior",
+    "🧩 Piezas cortadas — Tiras o mangas",
+    "🧩 Piezas cortadas — Bolsillos y pretina intermedia",
+    "🧵 Proceso — Armar corpiño / pinzas y escotes (plana / filete)",
+    "🧵 Proceso — Armar pantalón inferior / tiros y entrepierna",
+    "🧵 Proceso — Unir corpiño con pantalón en cintura (filete + plana)",
+    "🧵 Proceso — Pegar cremallera invisible o visible (plana)",
+    "🧵 Proceso — Pegar cargaderas / elástico en cintura",
+    "🧵 Proceso — Dobladillo de botas y escotes (plana o collarín)",
+    "👗 Prenda completa (ensamblado de enterizo)",
+    "✏️ Otro proceso de enterizo...",
+  ],
+  "Pantaloneta / Boxer": [
+    "🧩 Piezas cortadas — Delanteros y Traseros",
+    "🧩 Piezas cortadas — Fondillo / Refuerzo anatómico",
+    "🧩 Piezas cortadas — Elástico de cintura",
+    "🧵 Proceso — Pegar refuerzo o fondillo delantero (collarín / recubridora)",
+    "🧵 Proceso — Unir tiro y entrepierna (fileteadora 4 hilos)",
+    "🧵 Proceso — Cerrar costados (fileteadora)",
+    "🧵 Proceso — Pegar elástico a la cintura (multiagujas / sobrecostura)",
+    "🧵 Proceso — Dobladillar piernas / ruedos (collarín)",
+    "🩲 Prenda completa (ensamblado de boxer/pantaloneta)",
+    "✏️ Otro proceso de boxer...",
+  ],
+  "Leggins": [
+    "🧩 Piezas cortadas — Piernas (delantero/trasero)",
+    "🧩 Piezas cortadas — Pretina anatómica alta",
+    "🧩 Piezas cortadas — Refuerzo / Rombo de tiro",
+    "🧵 Proceso — Pegar rombo o refuerzo de tiro (fileteadora 4 hilos)",
+    "🧵 Proceso — Unir tiros delantero y trasero (fileteadora 4 hilos)",
+    "🧵 Proceso — Cerrar entrepierna continua (fileteadora)",
+    "🧵 Proceso — Armar y embonar pretina anatómica (fileteadora + collarín)",
+    "🧵 Proceso — Pespunte de elástico interno en pretina (plana / recubridora)",
+    "🧵 Proceso — Dobladillo de bota en tobillo (collarín)",
+    "🩱 Prenda completa (ensamblado de leggins)",
+    "✏️ Otro proceso de leggins...",
+  ],
+  "Pijama / Conjunto": [
+    "🧩 Piezas cortadas — Blusa / Camisilla superior",
+    "🧩 Piezas cortadas — Pantalón / Short inferior",
+    "🧩 Piezas cortadas — Sesgos y elásticos",
+    "🧵 Proceso — Unir hombros y sesgos de cuello de blusa (collarín)",
+    "🧵 Proceso — Cerrar costados y ruedos de blusa (filete + collarín)",
+    "🧵 Proceso — Unir tiros y entrepierna de pantalón/short (fileteadora)",
+    "🧵 Proceso — Encauchar cintura de pantalón (pretinadora o plana)",
+    "🧵 Proceso — Dobladillar bota de pantalón (collarín)",
+    "🛌 Prenda completa (conjunto pijama terminado)",
+    "✏️ Otro proceso de pijama...",
+  ],
+  "Uniforme Escolar": [
+    "🧩 Piezas cortadas — Cuerpo camisa / blusa de dotación",
+    "🧩 Piezas cortadas — Pantalón o falda de dotación",
+    "🧩 Piezas cortadas — Bolsillos cargo / bolsillos con tapa",
+    "🧵 Proceso — Armar bolsillos con fuelle y tapas (plana)",
+    "🧵 Proceso — Pegar bolsillos a delantero / piernas (plana)",
+    "🧵 Proceso — Unir hombros con pespunte reforzado (filete + plana)",
+    "🧵 Proceso — Pegar cuello camisero con entretela dura (plana)",
+    "🧵 Proceso — Pegar cinta reflectiva de seguridad (plana)",
+    "🧵 Proceso — Cerrar costados con puntada de seguridad (fileteadora 5 hilos)",
+    "🧵 Proceso — Dobladillos y presilles de alta resistencia",
+    "👔 Prenda completa (ensamblado de dotación)",
+    "✏️ Otro proceso de dotación...",
+  ],
+  "Ropa Deportiva": [
+    "🧩 Piezas cortadas — Paneles delantero y espalda",
+    "🧩 Piezas cortadas — Cortes laterales microperforados",
+    "🧩 Piezas cortadas — Mangas ranglan o sisas",
+    "🧵 Proceso — Ensamble de cortes decorativos y malla (fileteadora 4 hilos)",
+    "🧵 Proceso — Unir mangas ranglan a hombros (fileteadora)",
+    "🧵 Proceso — Sesgo elástico en escote y sisas (sesgadora collarín)",
+    "🧵 Proceso — Cerrar costados continuos (fileteadora)",
+    "🧵 Proceso — Ruedo de bajo y mangas con recubridora (collarín)",
+    "🎽 Prenda completa (ensamblado deportivo)",
+    "✏️ Otro proceso deportivo...",
+  ],
+};
+
+const DEFAULT_FABRIC_BY_GARMENT: Record<string, string> = {
+  "Franela / Blusa": "Algodón / Chalis",
+  "Pantalón Jean / Dril": "Denim / Índigo rígido o licrado",
+  "Pantalón Jean": "Denim / Índigo",
+  "Camiseta Polo": "Piqué 65/35",
+  "Camiseta Básica": "Algodón Jersey 100%",
+  "Camisa Manga Larga": "Popelina / Oxford",
+  "Short / Bermudas": "Dril / Gabardina",
+  "Buzo / Sudadera": "Algodón Perchado",
+  "Chaqueta / Chompa": "Antifluido / Forro acolchado",
+  "Enterizo / Overol": "Dril / Lino",
+  "Pantaloneta / Boxer": "Microfibra / Licra",
+  "Leggins": "Suplex pesado",
+  "Pijama / Conjunto": "Piel de durazno",
+  "Uniforme Escolar": "Gabardina / Poliéster",
+  "Ropa Deportiva": "Dry-Fit / Poliéster transpirable",
+};
+
+const DEFAULT_TARIFA_BY_GARMENT: Record<string, number> = {
+  "Franela / Blusa": 500,
+  "Pantalón Jean / Dril": 800,
+  "Pantalón Jean": 800,
+  "Camiseta Polo": 650,
+  "Camiseta Básica": 450,
+  "Camisa Manga Larga": 900,
+  "Short / Bermudas": 600,
+  "Buzo / Sudadera": 750,
+  "Chaqueta / Chompa": 1400,
+  "Enterizo / Overol": 950,
+  "Pantaloneta / Boxer": 450,
+  "Leggins": 500,
+  "Pijama / Conjunto": 550,
+  "Uniforme Escolar": 700,
+  "Ropa Deportiva": 550,
+};
+
+const PIECE_PRESETS = GENERIC_PIECE_PRESETS;
 
 export type ManualLog = {
   id: string;
@@ -225,17 +497,41 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
   const [workType, setWorkType] = useState<"process" | "full">("process");
   const [prenda, setPrenda] = useState("Franela / Blusa");
   const [customPrenda, setCustomPrenda] = useState("");
-  const [pieza, setPieza] = useState(PIECE_PRESETS[0]);
+
+  // Lista dinámica de piezas y procesos según la prenda seleccionada
+  const currentPieces = useMemo(() => {
+    return PIECE_PRESETS_BY_GARMENT[prenda] || GENERIC_PIECE_PRESETS;
+  }, [prenda]);
+
+  const [pieza, setPieza] = useState(() => (PIECE_PRESETS_BY_GARMENT["Franela / Blusa"] || GENERIC_PIECE_PRESETS)[0]);
   const [customPieza, setCustomPieza] = useState("");
   const [color, setColor] = useState("Azul");
-  const [tela, setTela] = useState("Algodón");
-  const [tarifa, setTarifa] = useState("600");
+  const [tela, setTela] = useState("Algodón / Chalis");
+  const [tarifa, setTarifa] = useState("500");
   const [customQty, setCustomQty] = useState("10");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [logs, setLogs] = useState<ManualLog[]>(() =>
     typeof window === "undefined" ? [] : loadLogs(storageKey)
   );
   const [compactView, setCompactView] = useState(false);
+
+  function handlePrendaChange(newPrenda: string) {
+    setPrenda(newPrenda);
+    const newPieces = PIECE_PRESETS_BY_GARMENT[newPrenda] || GENERIC_PIECE_PRESETS;
+    setPieza(newPieces[0] || "");
+    setCustomPieza("");
+    if (newPrenda !== GARMENT_PRESETS[GARMENT_PRESETS.length - 1]) {
+      setCustomPrenda("");
+    }
+    const defaultFabric = DEFAULT_FABRIC_BY_GARMENT[newPrenda];
+    if (defaultFabric) {
+      setTela(defaultFabric);
+    }
+    const defaultTarifa = DEFAULT_TARIFA_BY_GARMENT[newPrenda];
+    if (defaultTarifa) {
+      setTarifa(String(defaultTarifa));
+    }
+  }
 
   /* --------- V2: pestañas internas, jornada/pausa, cobros, novedades --------- */
 
@@ -399,10 +695,11 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
       prenda === GARMENT_PRESETS[GARMENT_PRESETS.length - 1]
         ? customPrenda.trim() || "Prenda general"
         : prenda;
-    const selectedPieza =
-      pieza === PIECE_PRESETS[PIECE_PRESETS.length - 1]
-        ? customPieza.trim() || "Proceso general"
-        : pieza;
+    const isCustomPiece =
+      pieza.startsWith("✏️") || pieza === currentPieces[currentPieces.length - 1];
+    const selectedPieza = isCustomPiece
+      ? customPieza.trim() || "Proceso general"
+      : pieza;
 
     const now = new Date();
     const newLog: ManualLog = {
@@ -481,11 +778,12 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
       setPrenda(GARMENT_PRESETS[GARMENT_PRESETS.length - 1]);
       setCustomPrenda(op.prenda);
     }
-    const matchesPieza = PIECE_PRESETS.some((p) => op.pieza.startsWith(p.split("—")[0].trim()));
-    const exactPieza = PIECE_PRESETS.find((p) => p === op.pieza);
+    const piecesForGarment = PIECE_PRESETS_BY_GARMENT[op.prenda] || GENERIC_PIECE_PRESETS;
+    const matchesPieza = piecesForGarment.some((p) => op.pieza.startsWith(p.split("—")[0].trim()));
+    const exactPieza = piecesForGarment.find((p) => p === op.pieza);
     if (exactPieza) setPieza(exactPieza);
     else if (!matchesPieza) {
-      setPieza(PIECE_PRESETS[PIECE_PRESETS.length - 1]);
+      setPieza(piecesForGarment[piecesForGarment.length - 1]);
       setCustomPieza(op.pieza);
     } else setPieza(op.pieza);
     setColor(op.color);
@@ -754,7 +1052,7 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
                 </label>
                 <select
                   value={prenda}
-                  onChange={(e) => setPrenda(e.target.value)}
+                  onChange={(e) => handlePrendaChange(e.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
                 >
                   {GARMENT_PRESETS.map((g) => (
@@ -777,26 +1075,26 @@ export default function ManualLogbook({ storageKey, variant, title, subtitle }: 
               <div className="sm:col-span-2">
                 <label className="mb-1 flex items-center text-xs font-medium text-slate-400">
                   Pieza / Proceso
-                  <Tooltip text="Piezas cortadas (manga, cuello, bolsillo…) y procesos de costura (filete, plana, collarín…) para cualquier tipo de prenda." />
+                  <Tooltip text="Piezas cortadas y procesos de costura específicos y calibrados para la prenda seleccionada." />
                 </label>
                 <select
                   value={pieza}
                   onChange={(e) => setPieza(e.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none"
                 >
-                  {PIECE_PRESETS.map((p) => (
+                  {currentPieces.map((p) => (
                     <option key={p} value={p}>
                       {p}
                     </option>
                   ))}
                 </select>
-                {pieza === PIECE_PRESETS[PIECE_PRESETS.length - 1] && (
+                {(pieza.startsWith("✏️") || pieza === currentPieces[currentPieces.length - 1]) && (
                   <input
                     type="text"
                     value={customPieza}
                     onChange={(e) => setCustomPieza(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-cyan-500/50 bg-slate-950 px-3 py-1.5 text-xs text-slate-100"
-                    placeholder="Escribe la pieza o proceso…"
+                    placeholder="Escribe la pieza o proceso personalizado…"
                   />
                 )}
               </div>
