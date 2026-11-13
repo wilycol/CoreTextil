@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeSizeFactors, scaleBundleMaterials } from "@/lib/sizeFactors";
 
 export type BundleSheet = {
+  bundleId: string;
+  bundleCode: string;
+  orderId: string;
   garmentName: string;
   referenceCode: string;
   size: string;
@@ -15,10 +18,14 @@ export type BundleSheet = {
   materialsCostCop: number;
   materialsCostForBundle: number;
   operations: {
+    id: string;
     step_order: number;
     operation_name: string;
     machine_type: string;
     base_rate_cop: number;
+    sam_minutes?: number | null;
+    units_completed: number;
+    prerequisite_operation_id?: string | null;
   }[];
   materials: {
     name: string;
@@ -41,7 +48,7 @@ export async function getBundleSheetCore(
   const { data: bundle } = await supabase
     .from("order_bundles")
     .select(
-      "id, size, units_count, production_orders(garment_id, garments(name, reference_code, total_sam_minutes, size_factors))"
+      "id, order_id, size, units_count, production_orders(garment_id, garments(name, reference_code, total_sam_minutes, size_factors))"
     )
     .eq("bundle_code", code)
     .single();
@@ -54,10 +61,10 @@ export async function getBundleSheetCore(
     return { ok: false, error: "La prenda del atado no está disponible." };
   }
 
-  const [{ data: ops }, { data: mats }] = await Promise.all([
+  const [{ data: ops }, { data: mats }, { data: logs }] = await Promise.all([
     supabase
       .from("garment_operations")
-      .select("step_order, operation_name, machine_type, base_rate_cop")
+      .select("id, step_order, operation_name, machine_type, base_rate_cop, sam_minutes, prerequisite_operation_id")
       .eq("garment_id", order.garment_id)
       .order("step_order"),
     supabase
@@ -65,9 +72,28 @@ export async function getBundleSheetCore(
       .select("name, unit, quantity_per_garment, unit_cost_cop")
       .eq("garment_id", order.garment_id)
       .order("name"),
+    supabase
+      .from("daily_production_logs")
+      .select("operation_id, units_completed")
+      .eq("bundle_id", bundle.id),
   ]);
 
-  const operations = (ops ?? []) as BundleSheet["operations"];
+  const completedMap: Record<string, number> = {};
+  for (const l of (logs ?? []) as any[]) {
+    completedMap[l.operation_id] = (completedMap[l.operation_id] ?? 0) + Number(l.units_completed);
+  }
+
+  const operations = (ops ?? []).map((o: any) => ({
+    id: o.id,
+    step_order: o.step_order,
+    operation_name: o.operation_name,
+    machine_type: o.machine_type,
+    base_rate_cop: Number(o.base_rate_cop),
+    sam_minutes: o.sam_minutes ? Number(o.sam_minutes) : null,
+    units_completed: completedMap[o.id] ?? 0,
+    prerequisite_operation_id: o.prerequisite_operation_id ?? null,
+  }));
+
   const materials = (mats ?? []).map((m: any) => ({
     name: m.name,
     unit: m.unit,
@@ -86,6 +112,9 @@ export async function getBundleSheetCore(
   return {
     ok: true,
     sheet: {
+      bundleId: bundle.id,
+      bundleCode: code,
+      orderId: (bundle as any).order_id ?? "",
       garmentName: garment.name,
       referenceCode: garment.reference_code,
       size: String((bundle as any).size ?? ""),
